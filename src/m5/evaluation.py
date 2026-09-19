@@ -25,6 +25,7 @@ import pandas as pd
 from scipy import sparse
 
 from m5.config import HORIZON
+from m5.features import TARGET
 
 HIERARCHY_COLS = ["id", "item_id", "dept_id", "cat_id", "store_id", "state_id"]
 # The 12 M5 aggregation levels, as the columns each one groups by.
@@ -189,3 +190,48 @@ class WRMSSEEvaluator:
             rmse=float(np.sqrt((err**2).mean())),
             undefined_weight_share=self.undefined_weight_share,
         )
+
+
+# Panel (one row per series-day) to the series x days matrices the evaluator scores.
+
+
+def _series_index(rows: pd.DataFrame, ids: pd.Index) -> np.ndarray:
+    ids_col = rows["id"]
+    if isinstance(ids_col.dtype, pd.CategoricalDtype):
+        lookup = ids.get_indexer(ids_col.cat.categories.astype(str))
+        r = lookup[ids_col.cat.codes.to_numpy()]
+    else:
+        r = ids.get_indexer(pd.Index(ids_col.astype(str)))
+    if (r < 0).any():
+        raise ValueError("rows for series outside the hierarchy")
+    return np.asarray(r)
+
+
+def _wide(panel: pd.DataFrame, ids: pd.Index, days: range, column: str) -> np.ndarray:
+    """series x days matrix of `column`; NaN where the panel has no row (not released)."""
+    frame = panel[(panel["d"] >= days.start) & (panel["d"] < days.stop)]
+    out = np.full((len(ids), len(days)), np.nan)
+    out[_series_index(frame, ids), frame["d"].to_numpy() - days.start] = frame[column].to_numpy()
+    return out
+
+
+def hierarchy_of(panel: pd.DataFrame) -> pd.DataFrame:
+    first = panel.drop_duplicates("id")[HIERARCHY_COLS].copy()
+    for col in HIERARCHY_COLS:
+        first[col] = first[col].astype(str)
+    return first.sort_values("id").reset_index(drop=True)
+
+
+def evaluator_for(panel: pd.DataFrame, hierarchy: pd.DataFrame, fold: Fold) -> WRMSSEEvaluator:
+    ids = pd.Index(hierarchy["id"])
+    days = range(1, fold.train_end + 1)
+    sales = np.nan_to_num(_wide(panel, ids, days, TARGET), nan=0.0)
+    prices = _wide(panel, ids, days, "sell_price")
+    return WRMSSEEvaluator(hierarchy, sales, prices, M5_LEVELS, WEIGHT_DAYS)
+
+
+def to_matrix(rows: pd.DataFrame, values: np.ndarray, ids: pd.Index, fold: Fold) -> np.ndarray:
+    """Lay row-wise values out as series x horizon; days before release are 0."""
+    out = np.zeros((len(ids), fold.test_end - fold.test_start + 1))
+    out[_series_index(rows, ids), rows["d"].to_numpy() - fold.test_start] = values
+    return out

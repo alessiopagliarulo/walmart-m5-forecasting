@@ -8,8 +8,16 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from m5.backtest import evaluator_for, hierarchy_of, split, to_matrix
-from m5.evaluation import M5_LEVELS, WRMSSEEvaluator, make_folds, naive_scale
+from m5.backtest import split
+from m5.evaluation import (
+    M5_LEVELS,
+    WRMSSEEvaluator,
+    evaluator_for,
+    hierarchy_of,
+    make_folds,
+    naive_scale,
+    to_matrix,
+)
 from m5.features import TARGET
 from m5.models import SeasonalNaive
 

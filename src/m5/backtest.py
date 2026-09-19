@@ -32,18 +32,19 @@ from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 from m5 import config
 from m5.download import expected_hashes, load_provenance
 from m5.evaluation import (
-    HIERARCHY_COLS,
-    M5_LEVELS,
     N_FOLDS,
     WEIGHT_DAYS,
     Fold,
     WRMSSEEvaluator,
+    evaluator_for,
+    hierarchy_of,
     make_folds,
+    to_matrix,
 )
 from m5.features import TARGET
-from m5.models import MODELS, SEED, HurdleLogisticRidge, Model
+from m5.models import MODELS, SEED, BoostedModel, HurdleLogisticRidge, Model
 
-PACKAGES = ["numpy", "pandas", "scikit-learn", "scipy", "mlflow", "pyarrow"]
+PACKAGES = ["numpy", "pandas", "scikit-learn", "scipy", "mlflow", "pyarrow", "lightgbm", "xgboost"]
 
 
 def load_panel(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
@@ -65,48 +66,6 @@ def split(panel: pd.DataFrame, fold: Fold) -> tuple[pd.DataFrame, pd.DataFrame]:
     in_window = (panel["d"] >= fold.test_start) & (panel["d"] <= fold.test_end)
     test = panel[in_window].drop(columns=[TARGET])
     return train, test
-
-
-def _series_index(rows: pd.DataFrame, ids: pd.Index) -> np.ndarray:
-    ids_col = rows["id"]
-    if isinstance(ids_col.dtype, pd.CategoricalDtype):
-        lookup = ids.get_indexer(ids_col.cat.categories.astype(str))
-        r = lookup[ids_col.cat.codes.to_numpy()]
-    else:
-        r = ids.get_indexer(pd.Index(ids_col.astype(str)))
-    if (r < 0).any():
-        raise ValueError("rows for series outside the hierarchy")
-    return np.asarray(r)
-
-
-def _wide(panel: pd.DataFrame, ids: pd.Index, days: range, column: str) -> np.ndarray:
-    """series x days matrix of `column`; NaN where the panel has no row (not released)."""
-    frame = panel[(panel["d"] >= days.start) & (panel["d"] < days.stop)]
-    out = np.full((len(ids), len(days)), np.nan)
-    out[_series_index(frame, ids), frame["d"].to_numpy() - days.start] = frame[column].to_numpy()
-    return out
-
-
-def hierarchy_of(panel: pd.DataFrame) -> pd.DataFrame:
-    first = panel.drop_duplicates("id")[HIERARCHY_COLS].copy()
-    for col in HIERARCHY_COLS:
-        first[col] = first[col].astype(str)
-    return first.sort_values("id").reset_index(drop=True)
-
-
-def evaluator_for(panel: pd.DataFrame, hierarchy: pd.DataFrame, fold: Fold) -> WRMSSEEvaluator:
-    ids = pd.Index(hierarchy["id"])
-    days = range(1, fold.train_end + 1)
-    sales = np.nan_to_num(_wide(panel, ids, days, TARGET), nan=0.0)
-    prices = _wide(panel, ids, days, "sell_price")
-    return WRMSSEEvaluator(hierarchy, sales, prices, M5_LEVELS, WEIGHT_DAYS)
-
-
-def to_matrix(rows: pd.DataFrame, values: np.ndarray, ids: pd.Index, fold: Fold) -> np.ndarray:
-    """Lay row-wise values out as series x horizon; days before release are 0."""
-    out = np.zeros((len(ids), fold.test_end - fold.test_start + 1))
-    out[_series_index(rows, ids), rows["d"].to_numpy() - fold.test_start] = values
-    return out
 
 
 def classification_summary(
@@ -155,6 +114,8 @@ def run_fold(
             sold, model.predict_proba_sold(test), base_rate
         )
         result["classifier"]["n_iter"] = int(model.classifier_.n_iter_[0])
+    if isinstance(model, BoostedModel):
+        result["tuning"] = model.tuning_
     return result
 
 
@@ -195,6 +156,22 @@ def _mlflow_metrics(result: dict[str, Any]) -> dict[str, float]:
     metrics |= {f"wrmsse_{k}": v for k, v in result["wrmsse_by_level"].items()}
     metrics |= {f"clf_{k}": float(v) for k, v in result.get("classifier", {}).items()}
     return metrics
+
+
+def log_tuning(name: str, fold: Fold, tuning: dict[str, Any]) -> None:
+    """Chosen parameters on the fold's run, and one nested run per search candidate."""
+    mlflow.log_params({f"chosen_{k}": v for k, v in tuning["chosen"].items()})
+    mlflow.log_params({"chosen_rounds": tuning["chosen_rounds"]})
+    mlflow.log_dict(tuning, "tuning.json")
+    for i, candidate in enumerate(tuning["candidates"]):
+        with mlflow.start_run(run_name=f"{name}-fold{fold.index}-search{i}", nested=True):
+            mlflow.log_params({"model": name, "fold": fold.index, **candidate["params"]})
+            mlflow.log_params({"rounds": candidate["rounds"]})
+            mlflow.log_metric("inner_wrmsse", candidate["inner_wrmsse"])
+
+
+def _params_text(params: dict[str, Any]) -> str:
+    return ", ".join(f"{k}={v}" for k, v in params.items())
 
 
 def render_markdown(report: dict[str, Any]) -> str:
@@ -243,6 +220,34 @@ def render_markdown(report: dict[str, Any]) -> str:
                     f"| {name} | {r['fold']} | {c['auc']:.4f} | {c['brier']:.4f} "
                     f"| {c['brier_base_rate']:.4f} | {c['brier_skill']:.4f} "
                     f"| {c['share_sold']:.3f} |"
+                )
+    tuned = {n: m for n, m in report["models"].items() if "search_space" in m}
+    if tuned:
+        lines += [
+            "",
+            "Hyperparameter search (gradient boosting). Each fold searches the grid on its own "
+            "training days only: train through the cutoff minus 28 days, score WRMSSE on the "
+            "last 28 training days, boosting rounds by early stopping there, then refit the "
+            "best candidate on every training day. The fold's test window is never seen.",
+            "",
+            "| Model | Fixed | Search grid |",
+            "| --- | --- | --- |",
+        ]
+        for name, m in tuned.items():
+            grid = "; ".join(f"{k} in {v}" for k, v in m["search_space"].items())
+            lines.append(f"| {name} | {_params_text(m['fixed_params'])} | {grid} |")
+        lines += [
+            "",
+            "| Model | Fold | Chosen | Rounds | Inner WRMSSE (chosen) | Inner WRMSSE (worst) |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ]
+        for name, m in tuned.items():
+            for r in m["folds"]:
+                t = r["tuning"]
+                worst = max(c["inner_wrmsse"] for c in t["candidates"])
+                lines.append(
+                    f"| {name} | {r['fold']} | {_params_text(t['chosen'])} "
+                    f"| {t['chosen_rounds']} | {t['chosen_inner_wrmsse']:.4f} | {worst:.4f} |"
                 )
     return "\n".join(lines) + "\n"
 
@@ -307,11 +312,18 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     result = run_fold(model, panel, hierarchy, fold, evaluators[fold.index])
                     mlflow.log_metrics(_mlflow_metrics(result))
+                    if "tuning" in result:
+                        log_tuning(name, fold, result["tuning"])
                 results.append(result)
                 print(f"{name} fold {fold.index}: WRMSSE {result['wrmsse']:.4f} "
                       f"({result['runtime_seconds']:.1f}s)", flush=True)  # fmt: skip
+            entry: dict[str, Any] = {"description": MODELS[name].description}
+            model_class = MODELS[name]
+            if isinstance(model_class, type) and issubclass(model_class, BoostedModel):
+                entry["fixed_params"] = model_class.fixed_params
+                entry["search_space"] = model_class.search_space
             report["models"][name] = {
-                "description": MODELS[name].description,
+                **entry,
                 "folds": results,
                 "mean_wrmsse": float(np.mean([r["wrmsse"] for r in results])),
                 "mean_mae": float(np.mean([r["mae"] for r in results])),

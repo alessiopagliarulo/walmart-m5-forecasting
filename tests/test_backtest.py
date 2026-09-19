@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from functools import partial
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from m5 import backtest, config, pipeline
 from m5.download import sha256_file
 from m5.evaluation import make_folds
 from m5.features import TARGET, build_features
-from m5.models import MODELS, LinearDesign, SeasonalNaive
+from m5.models import MODELS, BoostedModel, LightGBMModel, LinearDesign, SeasonalNaive
 from m5.verify import verify_raw
 from tests.conftest import FIXTURE_FACTS, FIXTURE_HORIZON, FIXTURE_STORE
 
@@ -105,13 +106,25 @@ def test_backtest_end_to_end_on_fixture(fixture_features: Path, tmp_path: Path) 
         assert model["mean_wrmsse"] == pytest.approx(np.mean([r["wrmsse"] for r in model["folds"]]))
     clf = report["models"]["hurdle_logistic_ridge"]["folds"][0]["classifier"]
     assert 0.0 <= clf["auc"] <= 1.0
+    assert set(report["environment"]["packages"]) >= {"lightgbm", "xgboost"}
+    boosted = [n for n, m in MODELS.items() if issubclass(m, BoostedModel)]
+    assert boosted == ["lightgbm", "xgboost"]
+    n_candidates = 0
+    for name in boosted:
+        model = report["models"][name]
+        assert model["search_space"] and model["fixed_params"]["seed"] == 0
+        for r in model["folds"]:
+            tuning = r["tuning"]
+            assert len(tuning["candidates"]) == math.prod(map(len, model["search_space"].values()))
+            n_candidates += len(tuning["candidates"])
 
     markdown = (results / "metrics.md").read_text()
     assert "do not edit by hand" in markdown
     assert all(name in markdown for name in MODELS)
 
     runs = mlflow.search_runs(experiment_names=[f"m5-backtest-{FIXTURE_STORE}"])
-    assert len(runs) == 1 + 3 * len(MODELS)
+    # One parent run, one run per model and fold, one per search candidate.
+    assert len(runs) == 1 + 3 * len(MODELS) + n_candidates
 
 
 def test_backtest_stops_on_unverified_features(
@@ -141,3 +154,28 @@ def test_linear_design_uses_training_statistics_only() -> None:
     # The unseen category "C" gets no indicator at all.
     raw_onehot = out[:, 2:] * np.array(design.std_[2:]) + np.array(design.mean_[2:])
     np.testing.assert_allclose(raw_onehot, [[0, 0, 0], [0, 1, 0]], atol=1e-6)
+
+
+def test_boosted_search_stays_inside_the_training_window(feature_panel: pd.DataFrame) -> None:
+    """The grid search validates on the last 28 training days, picks the candidate with
+    the lowest inner WRMSSE and refits it; the fold's test days play no part."""
+    fold = make_folds(LAST_DAY)[1]
+    train, test = backtest.split(feature_panel, fold)
+    model = LightGBMModel().fit(train)
+    tuning = model.tuning_
+    assert tuning["inner_train_end_d"] == fold.train_end - FIXTURE_HORIZON
+    assert tuning["inner_valid_d"] == [fold.train_end - FIXTURE_HORIZON + 1, fold.train_end]
+    assert [c["params"] for c in tuning["candidates"]] == model.candidates()
+    assert len(tuning["candidates"]) == 6
+    best = min(tuning["candidates"], key=lambda c: c["inner_wrmsse"])
+    assert tuning["chosen"] == best["params"]
+    assert model.params_ == {**model.fixed_params, **best["params"]}
+    assert model.booster_.num_trees() == tuning["chosen_rounds"]
+    assert 1 <= tuning["chosen_rounds"] <= 3000
+
+    prediction = model.predict(test)
+    assert prediction.shape == (len(test),) and (prediction >= 0).all()
+    # Deterministic: the same training rows give the same search and the same forecast.
+    again = LightGBMModel().fit(train)
+    assert again.tuning_ == tuning
+    np.testing.assert_array_equal(again.predict(test), prediction)
