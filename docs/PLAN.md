@@ -1,7 +1,8 @@
 # Project plan
 
 This is the whole-project plan. Issues #1 (data pipeline and repo foundation), #2
-(baselines) and #3 (scikit-learn models) are built, with the evaluation harness. Everything marked **not built** below is planned work, and every number in the
+(baselines), #3 (scikit-learn models) and #4 (gradient boosting) are built, with the
+evaluation harness. Everything marked **not built** below is planned work, and every number in the
 "Targets" section is a target, not a result.
 
 ## 1. Purpose
@@ -51,8 +52,13 @@ walk-forward validation, the competition's own metric - not a leaderboard chase.
    classification framing genuinely applies: "will this item sell today", used as the
    zero part of a hurdle model. The authoritative list is `MODELS` in
    `src/m5/models.py`.
-3. Boosting (#4, **not built**): XGBoost and LightGBM with Tweedie loss, walk-forward CV and a small,
-   documented hyperparameter search.
+3. Boosting (#4, built): XGBoost and LightGBM with Tweedie loss on the same features
+   and folds. Hyperparameters come from a small grid (Tweedie variance power x tree
+   size) searched inside each fold's training days: train through the cutoff minus 28
+   days, score WRMSSE on the last 28 training days, pick boosting rounds by early
+   stopping there, then refit the best candidate on every training day. The test
+   window never takes part. The grid, the fixed parameters and every candidate's score
+   are recorded in `results/metrics.json`.
 
 Features (built): 52 model inputs across the planned families, meeting the 40+ target -
 12 sales lags, rolling mean and std over 6 windows, zero-sales share, same-weekday mean,
@@ -93,7 +99,7 @@ where the model is fragile (for example new items or intermittent sellers).
 | #1 | Data pipeline and repo foundation | built |
 | #2 | Baselines (seasonal-naive, simple regression) | built |
 | #3 | scikit-learn models | built |
-| #4 | XGBoost / LightGBM with walk-forward CV | not built |
+| #4 | XGBoost / LightGBM with walk-forward CV | built |
 | #5 | SHAP explanations | not built |
 | #6 | Results write-up | not built |
 | #14 | Autonomous improvement loop, once the project is real | not built |

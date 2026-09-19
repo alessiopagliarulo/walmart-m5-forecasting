@@ -106,6 +106,11 @@ def run_fold(
         "runtime_seconds": round(runtime, 3),
         "n_train_rows": len(train),
         "n_test_rows": len(test),
+        # Whole-store units per forecast day, for the forecast-vs-actual plot.
+        "store_daily_units": {
+            "actual": [round(float(v), 3) for v in actual.sum(axis=0)],
+            "forecast": [round(float(v), 3) for v in forecast.sum(axis=0)],
+        },
     }
     if isinstance(model, HurdleLogisticRidge):
         sold = truth_rows[TARGET].to_numpy() > 0

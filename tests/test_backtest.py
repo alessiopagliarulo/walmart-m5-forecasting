@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from m5 import backtest, config, pipeline
+from m5 import backtest, config, pipeline, plots
 from m5.download import sha256_file
 from m5.evaluation import make_folds
 from m5.features import TARGET, build_features
@@ -117,6 +117,13 @@ def test_backtest_end_to_end_on_fixture(fixture_features: Path, tmp_path: Path) 
             tuning = r["tuning"]
             assert len(tuning["candidates"]) == math.prod(map(len, model["search_space"].values()))
             n_candidates += len(tuning["candidates"])
+
+    for model in report["models"].values():
+        daily = model["folds"][0]["store_daily_units"]
+        assert len(daily["actual"]) == len(daily["forecast"]) == FIXTURE_HORIZON
+    assert plots.main(["--results-dir", str(results)]) == 0
+    png = results / f"forecast_vs_actual_{FIXTURE_STORE}.png"
+    assert png.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
     markdown = (results / "metrics.md").read_text()
     assert "do not edit by hand" in markdown
