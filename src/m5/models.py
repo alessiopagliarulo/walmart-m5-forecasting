@@ -258,6 +258,9 @@ class BoostedModel:
     def _predict(self, booster: Any, frame: pd.DataFrame) -> np.ndarray:
         raise NotImplementedError
 
+    def _contributions(self, booster: Any, frame: pd.DataFrame) -> np.ndarray:
+        raise NotImplementedError
+
     def candidates(self) -> list[dict[str, Any]]:
         keys = list(self.search_space)
         grid = itertools.product(*(self.search_space[k] for k in keys))
@@ -281,8 +284,7 @@ class BoostedModel:
             score = evaluator.score(actual, forecast)
             tried.append({"params": candidate, "rounds": rounds, "inner_wrmsse": score.wrmsse})
         best = min(tried, key=lambda c: c["inner_wrmsse"])
-        self.params_ = {**self.fixed_params, **best["params"]}
-        self.booster_, _ = self._train(self.params_, train, None, best["rounds"])
+        self.refit(train, best["params"], best["rounds"])
         self.tuning_ = {
             "inner_train_end_d": inner.train_end,
             "inner_valid_d": [inner.test_start, inner.test_end],
@@ -293,9 +295,29 @@ class BoostedModel:
         }
         return self
 
+    def refit(self, train: pd.DataFrame, params: dict[str, Any], rounds: int) -> BoostedModel:
+        """Final step of `fit` on its own: train `params` for `rounds` on every training row.
+
+        Lets m5-explain rebuild the exact model a backtest fold chose without rerunning
+        the search.
+        """
+        self.params_ = {**self.fixed_params, **params}
+        self.booster_, _ = self._train(self.params_, train, None, rounds)
+        return self
+
     def predict(self, test: pd.DataFrame) -> np.ndarray:
         prediction = self._predict(self.booster_, test)
         return np.asarray(np.clip(prediction, 0.0, None), dtype="float64")
+
+    def shap_values(self, frame: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+        """Exact TreeSHAP values from the booster's own implementation.
+
+        Returns (values, base): values is rows x `self.features`, base is per row. They
+        are in the model's raw output space, which for Tweedie is log(expected units),
+        so values + base summed over a row equals log of the prediction.
+        """
+        out = self._contributions(self.booster_, frame)
+        return out[:, :-1].astype("float64"), out[:, -1].astype("float64")
 
 
 class LightGBMModel(BoostedModel):
@@ -337,6 +359,9 @@ class LightGBMModel(BoostedModel):
         return np.asarray(
             booster.predict(frame[self.features], num_iteration=booster.best_iteration or None)
         )
+
+    def _contributions(self, booster: lgb.Booster, frame: pd.DataFrame) -> np.ndarray:
+        return np.asarray(booster.predict(frame[self.features], pred_contrib=True))
 
 
 class XGBoostModel(BoostedModel):
@@ -381,6 +406,10 @@ class XGBoostModel(BoostedModel):
         rounds = int(booster.best_iteration) + 1 if "best_iteration" in booster.attributes() else 0
         matrix = self._matrix(frame, with_target=False)
         return np.asarray(booster.predict(matrix, iteration_range=(0, rounds)))
+
+    def _contributions(self, booster: xgb.Booster, frame: pd.DataFrame) -> np.ndarray:
+        matrix = self._matrix(frame, with_target=False)
+        return np.asarray(booster.predict(matrix, pred_contribs=True))
 
 
 MODELS: dict[str, type[Model]] = {

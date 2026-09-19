@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import math
-from functools import partial
 from pathlib import Path
 
 import mlflow
@@ -12,13 +11,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from m5 import backtest, config, pipeline, plots
-from m5.download import sha256_file
+from m5 import backtest, config, plots
 from m5.evaluation import make_folds
 from m5.features import TARGET, build_features
 from m5.models import MODELS, BoostedModel, LightGBMModel, LinearDesign, SeasonalNaive
-from m5.verify import verify_raw
-from tests.conftest import FIXTURE_FACTS, FIXTURE_HORIZON, FIXTURE_STORE
+from tests.conftest import FIXTURE_HORIZON, FIXTURE_STORE
 
 LAST_DAY = 420  # last day with sales in the fixture
 
@@ -66,20 +63,6 @@ def test_forecasts_ignore_sales_after_the_cutoff(
         forecasts.append(MODELS[name]().fit(train).predict(test))
     np.testing.assert_array_equal(forecasts[0], forecasts[1])
     assert np.isfinite(forecasts[0]).all() and (forecasts[0] >= 0).all()
-
-
-@pytest.fixture
-def fixture_features(fixture_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Build the fixture's feature table with the real pipeline, as m5-features would."""
-    hashes = {name: sha256_file(fixture_dir / name) for name in config.RAW_FILES}
-    provenance = {"files": {name: {"sha256": h} for name, h in hashes.items()}}
-    monkeypatch.setattr(pipeline, "load_provenance", lambda: provenance)
-    monkeypatch.setattr(pipeline, "verify_raw", partial(verify_raw, expected=FIXTURE_FACTS))
-    monkeypatch.setattr(backtest, "load_provenance", lambda: provenance)
-    out = tmp_path / "processed"
-    args = ["--raw-dir", str(fixture_dir), "--out-dir", str(out), "--manifest-dir", str(out)]
-    assert pipeline.main(args) == 0
-    return out
 
 
 def test_backtest_end_to_end_on_fixture(fixture_features: Path, tmp_path: Path) -> None:
