@@ -32,7 +32,15 @@ jobs:
   # has installed the app and added that secret, this cheap job notices the missing token,
   # says so, and ends green; the agent job that depends on it is then skipped, which also
   # leaves the run green. No agent is started and no failure email is sent.
+  #
+  # LOOP PRs ONLY. The Auditor runs on the owner's Claude subscription, and only the
+  # loop's own work goes through it: AI-drafted ideas the owner approved, built on
+  # `claude/` branches. Every other PR (the owner's hand edits, `fm/` branches, anything
+  # else) gets the plain CI checks and nothing more. Skipping this job skips the audit
+  # job that needs it, so such a PR shows the Auditor as skipped, never red. A manual
+  # `workflow_dispatch` re-audit is always allowed: the owner chose to spend on it.
   credentials:
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'claude/')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

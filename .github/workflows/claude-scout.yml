@@ -783,17 +783,20 @@ jobs:
 
           # Only the agent's own words count: the final result, then its assistant text.
           # The prompt is not searched, so the example line in it can never match.
-          reason=""
-          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ]; then
-            reason=$(jq -r '
+          # scripts/scout-standdown.mjs accepts every stand-down phrasing the prompt has
+          # used ("SCOUT RESULT: nothing filed - ...", "SCOUT-DECISION: none - ...",
+          # "SCOUT-DECISION: filed 0"), in any case and any markdown. It is read from the
+          # commit this run started on, not the working tree the agent could edit.
+          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ] \
+            && git show "$GITHUB_SHA:scripts/scout-standdown.mjs" > "$RUNNER_TEMP/scout-standdown.mjs"; then
+            if reason=$(jq -r '
                 [ .[]? | select(.type == "result") | .result? // empty ],
                 [ .[]? | select(.type == "assistant") | .message.content[]? | select(.type == "text") | .text ]
                 | .[]' "$EXECUTION_FILE" 2>/dev/null \
-              | grep -o 'SCOUT RESULT: nothing filed - .*' | tail -n 1 || true)
-          fi
-          if [ -n "$reason" ]; then
-            echo "::notice::Scout filed nothing this run and said why: ${reason#SCOUT RESULT: nothing filed - }"
-            exit 0
+              | node "$RUNNER_TEMP/scout-standdown.mjs"); then
+              echo "::notice::Scout filed nothing this run and said why: $reason"
+              exit 0
+            fi
           fi
           echo "::error::Scout filed ZERO issues and gave no reason (no 'SCOUT RESULT: nothing filed - ...' line in its final message). The run is being failed on purpose - a green tick that produced nothing is worse than a red one, because it looks like the loop is working when it is not. Read the agent's final message in the log above: the usual cause is that it backgrounded its researchers and ended its turn instead of blocking on them."
           exit 1
