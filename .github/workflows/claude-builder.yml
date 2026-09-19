@@ -1,0 +1,389 @@
+name: Claude - Builder (implements work, keeps your queue full)
+
+# Runs the moment you label an issue `approved`, and every 30 minutes as a backstop.
+# Opens ONE pull request per run, and only if your review queue has room.
+#
+# WHY THE `labeled` TRIGGER: GitHub's cron is best-effort and silently drops runs under
+# load - in another repo running this loop, a */30 schedule fired only five times in
+# five hours, and approved issues sat for an hour because the Builder never woke up. Now approving from the phone starts a build
+# within a minute, and the schedule is only a safety net.
+#
+# THE QUEUE RULE - both numbers below are configurable per-project from the dashboard's
+# Ideas page, stored in this repo's `.github/loop-config.json`. No time-of-day special
+# casing: the same rule applies at 3pm and at 3am.
+#   - `prCap` (default 3): at most this many agent PRs may be open and waiting on you at
+#     once. Merge or close one and a slot frees up; the next run fills it. DRAFT PRs do
+#     not count - they are not waiting on you - which is also how the dashboard counts
+#     them, so the two never disagree about whether a slot is free.
+#   - `autonomousBuildEnabled` (default false):
+#       - OFF - the Builder only ever builds an issue you've explicitly labeled
+#         `approved`. It is never told that self-picking a proposal is an option.
+#       - ON - if nothing is `approved`, it picks the strongest open `proposal` on its
+#         own. You do not have to approve anything for the loop to keep moving.
+#   - It NEVER picks an issue that already has an open `claude/` PR against it.
+#
+# A cheap bash gate runs first, so a run with no room and no work costs ~15 seconds.
+# That same gate refuses to run at all until `docs/archive/loop-brief.md` is filled in - a
+# placeholder brief means nobody has told this loop what the product is, and a Builder
+# with no product context invents one.
+
+on:
+  issues:
+    types: [labeled]
+  schedule:
+    - cron: "*/30 * * * *" # backstop only - GitHub drops these regularly
+  workflow_dispatch:
+
+concurrency:
+  group: builder-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  # STAND-DOWN GUARD. Every agent step below authenticates with the
+  # CLAUDE_CODE_OAUTH_TOKEN repository secret (and the Claude GitHub App). Until the owner
+  # has installed the app and added that secret, this cheap job notices the missing token,
+  # says so, and ends green; the agent job that depends on it is then skipped, which also
+  # leaves the run green. No agent is started and no failure email is sent.
+  credentials:
+    # On a label event, only wake up for `approved` - not for every label anyone adds.
+    if: github.event_name != 'issues' || github.event.label.name == 'approved'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Is a Claude token configured for this repo?
+        id: check
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "::notice::standing down: no Claude token configured for this repo. Install the Claude GitHub App on this repository, then add the CLAUDE_CODE_OAUTH_TOKEN secret, and this workflow starts doing real work on its next trigger."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Claude token is configured - proceeding."
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: credentials
+    if: needs.credentials.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      # Required by anthropics/claude-code-action: it mints its GitHub App token from OIDC.
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # Read this repo's automation settings. Missing file or missing field falls back
+      # to the safe default (prCap 3, autonomous build OFF) - a repo that hasn't been
+      # backfilled with loop-config.json yet, or hasn't visited the Ideas page settings
+      # panel, gets the conservative behavior, never the permissive one.
+      - name: Read loop config
+        id: config
+        run: |
+          cap=$(jq -r '.prCap // 3' .github/loop-config.json 2>/dev/null || echo 3)
+          if [ "$cap" = "unlimited" ] || [ "$cap" = "null" ] || [ -z "$cap" ]; then
+            cap=999999
+          fi
+          autonomous=$(jq -r '.autonomousBuildEnabled // false' .github/loop-config.json 2>/dev/null || echo false)
+          [ "$autonomous" = "true" ] || autonomous=false
+          echo "Review-queue cap: $cap | Autonomous build: $autonomous"
+          echo "cap=$cap" >> "$GITHUB_OUTPUT"
+          echo "autonomous=$autonomous" >> "$GITHUB_OUTPUT"
+
+      # Cheap pre-flight in plain bash so we never boot an expensive agent for nothing.
+      - name: Check the queue
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CAP: ${{ steps.config.outputs.cap }}
+          AUTONOMOUS: ${{ steps.config.outputs.autonomous }}
+          REPO: ${{ github.repository }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          # ── THE LOOP BRIEF MUST EXIST AND BE FILLED IN ────────────────────────────
+          # `docs/archive/loop-brief.md` is the product brief every agent in this loop reads. On a
+          # freshly onboarded repo it is a placeholder whose sections all still say
+          # `_Not filled in yet._`. Building against that is building with no idea what the
+          # product is for - the agent simply invents one. Stand down here, in bash, before
+          # a single model token is spent.
+          if [ ! -f docs/archive/loop-brief.md ]; then
+            echo "There is no docs/archive/loop-brief.md in this repo - standing down. Fill in the loop brief first: every agent in this loop reads it, and without it the Builder would be guessing at what this project is even for."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if grep -qF '_Not filled in yet._' docs/archive/loop-brief.md; then
+            echo "docs/archive/loop-brief.md is still the onboarding placeholder (it still says _Not filled in yet._) - standing down. Fill in the loop brief first; the Builder will not build a project nobody has told it anything about."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # DRAFTS DO NOT COUNT AGAINST THE CAP. A draft PR is not waiting on the owner -
+          # it is not reviewable yet - and the dashboard's queue count already excludes
+          # them. Counting them here made the two disagree: the dashboard showed a free
+          # slot while the Builder stood down saying the queue was full.
+          # --limit 200 on every list: gh silently truncates at 30.
+          open_prs=$(gh pr list --state open --limit 200 --json headRefName,isDraft \
+            --jq '[.[] | select(.headRefName | startswith("claude/")) | select(.isDraft | not)] | length')
+
+          # Issues that an OPEN agent PR already claims. Without this the Builder rebuilds
+          # an issue it is already building: in another repo running this loop, two runs
+          # both picked the same issue and produced two PRs for one feature. Telling the agent
+          # "I've started this" in an issue comment is NOT protection - the next run never
+          # reads it. This is.
+          # Detected three ways: "Closes #N" in the body, "(#N)" in the PR title, and an
+          # explicit `issue-N` segment in the branch name (e.g. `claude/issue-15-foo`) -
+          # the body scan alone misses PRs that only recorded the issue number in the
+          # title or branch.
+          # There used to be a fourth, "any number at the end of the branch name". It was
+          # wrong far too often: `claude/fix-utf-8` claimed issue #8, `claude/oauth2` claimed
+          # #2, and every branch ending in a version or a date claimed something. A false
+          # claim is expensive and silent - the Builder skips a real approved issue forever
+          # and nobody is told why. Only the deliberate `issue-N` form counts now.
+          # Drafts DO count here: a draft PR is still work in progress against that issue,
+          # even though it does not occupy a review slot above.
+          claimed=$(gh pr list --state open --limit 200 --json headRefName,title,body \
+            --jq '[.[] | select(.headRefName | startswith("claude/"))
+                       | ( (.body // "") | scan("(?i)closes #([0-9]+)") | .[0] ),
+                         ( (.title // "") | scan("\\(#([0-9]+)\\)") | .[0] ),
+                         ( (.headRefName // "") | scan("issue-([0-9]+)(?:-|$)") | .[0] )]
+                  | unique | join(", ")')
+          [ -z "$claimed" ] && claimed="(none)"
+
+          approved=$(gh issue list --state open --label approved --limit 200 --json number --jq 'length')
+          proposals=$(gh issue list --state open --label proposal --limit 200 --json number --jq 'length')
+          echo "Agent PRs awaiting you (drafts excluded): $open_prs / $CAP | approved: $approved | proposals: $proposals | autonomous: $AUTONOMOUS"
+          echo "Already claimed by an open PR: $claimed"
+          echo "claimed=$claimed" >> "$GITHUB_OUTPUT"
+
+          # ── Assignee / reviewer resolution ────────────────────────────────────────
+          # `--assignee <org>` and `--reviewer <org>` are hard errors: an organization
+          # can neither be assigned a PR nor requested as a reviewer. On an org-owned
+          # repo that made `gh pr create` fail outright - the agent had done all the
+          # work, and the run went red with nothing to show for it. Resolve it once here
+          # and hand the agent the exact flags to use (same approach as the Scout).
+          owner_type=$(gh api "repos/$REPO" --jq '.owner.type' 2>/dev/null || echo "")
+          if [ "$owner_type" = "Organization" ]; then
+            ship_flags=""
+            ship_note="This repository is owned by an ORGANIZATION, so there are deliberately NO assignee or reviewer flags - an organization cannot be assigned a PR or requested as a reviewer, and passing either makes \`gh pr create\` fail outright. Do not add them back. Instead, make the PR title and description carry their own weight: the team finds this PR from the repository's pull request list."
+            echo "Owner $REPO_OWNER is an organization - PRs will be opened without --assignee/--reviewer."
+          else
+            ship_flags="--assignee $REPO_OWNER --reviewer $REPO_OWNER"
+            ship_note="Those assignee and reviewer flags are NOT optional: without them the PR never reaches the owner's GitHub inbox and they will never know it exists."
+            echo "Owner $REPO_OWNER is a user - PRs will be opened with $ship_flags."
+          fi
+          echo "ship_flags=$ship_flags" >> "$GITHUB_OUTPUT"
+          {
+            echo "ship_note<<SHIPEOF"
+            echo "$ship_note"
+            echo "SHIPEOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$AUTONOMOUS" = "true" ]; then
+            pick_rule='2. If none are approved, choose the SINGLE strongest open issue labeled `proposal` - judge by value to the product against effort and risk, and prefer small. You are trusted to choose. Do not ask, do not build more than one.'
+            nothing_to_build=$([ "$approved" -eq 0 ] && [ "$proposals" -eq 0 ] && echo true || echo false)
+          else
+            pick_rule='2. If none are approved, STOP without opening a PR. Autonomous build is OFF for this project - you may only build issues the owner has explicitly labeled `approved`. Do not self-pick a proposal, no matter how strong it looks, and do not comment suggesting one - the owner has chosen to review before anything gets built.'
+            nothing_to_build=$([ "$approved" -eq 0 ] && echo true || echo false)
+          fi
+          {
+            echo "pick_rule<<PICKEOF"
+            echo "$pick_rule"
+            echo "PICKEOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$open_prs" -ge "$CAP" ]; then
+            echo "Your review queue is full - standing down. Merge or close one to free a slot."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          elif [ "$nothing_to_build" = "true" ]; then
+            echo "Nothing to build - the shelf is empty (or autonomous build is off and nothing is approved). Scout will restock it."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The agent runs this project's gates (ruff, mypy, pytest), which need uv and the
+      # locked environment. Installed only when an agent is actually going to run.
+      - if: steps.gate.outputs.go == 'true'
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - if: steps.gate.outputs.go == 'true'
+        name: Install the locked environment
+        run: uv sync --locked
+
+      - if: steps.gate.outputs.go == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
+          claude_args: |
+            --model opus
+            --max-turns 80
+            --allowedTools "Bash,BashOutput,KillShell,Read,Write,Edit,Glob,Grep,Task,TodoWrite,WebSearch,WebFetch"
+          prompt: |
+            You are the BUILDER for ${{ github.repository }}. You open exactly ONE pull request
+            this run, then stop.
+
+            Read docs/archive/loop-brief.md before writing a single line: it says what this
+            project is, what the owner wants now, and what is off limits. Then read
+            AGENTS.md, CLAUDE.md and LEARNINGS.md if they exist (they are maintainer-local
+            notes and are normally absent from the checkout - if so, proceed without them).
+            LEARNINGS.md is the record of mistakes this loop has already made - do not
+            repeat them.
+
+            ────────────────────────────────────────────────────────────────────────
+            HOW THIS RUN WORKS - READ THIS FIRST, IT IS NOT OPTIONAL
+
+            You are running inside a one-shot CI job. **There is no second turn.** The moment you
+            stop producing tool calls, this container is destroyed. Nothing resumes you.
+
+            - When you spawn subagents with the Task tool, you MUST pass `run_in_background: false`
+              so you BLOCK and receive their reports. A backgrounded subagent is killed the moment
+              you stop, and its work is thrown away.
+            - NEVER end your turn saying you will "wait for" anything or "report back". There is no
+              later. That sentence means you failed.
+            - Your job is done when `gh pr create` has actually run and returned a URL - not when
+              you have decided what to build.
+
+            A previous Scout run dispatched four background researchers, announced it would wait
+            for them, ended its turn, and produced nothing while the run went green. Do not repeat
+            that.
+            ────────────────────────────────────────────────────────────────────────
+
+            ────────────────────────────────────────────────────────────────────────
+            NEVER BUILD AN ISSUE THAT IS ALREADY BEING BUILT
+
+            These issues already have an OPEN pull request against them:
+                ${{ steps.gate.outputs.claimed }}
+
+            They are OFF LIMITS. Do not pick them. Do not "improve" them.
+
+            This happened for real in another repo running this loop: two Builder runs both
+            picked the same issue and produced two pull requests for one feature. The owner
+            had to throw one away. Commenting "I've started this" on the issue is NOT enough
+            protection, because the next run does not read it - this list is the protection.
+            ────────────────────────────────────────────────────────────────────────
+
+            PICK - in this strict order, skipping anything in the off-limits list above:
+            1. The OLDEST open issue labeled `approved`. The owner asked for it; it always wins.
+            ${{ steps.gate.outputs.pick_rule }}
+            3. If neither exists, stop without opening a PR.
+
+            READ THE WHOLE CONVERSATION, NOT JUST THE ISSUE BODY:
+            run `gh issue view <n> --comments`. The owner often clarifies, narrows, or changes
+            their mind in the comments - "only do the hurdle model", "skip the plot", "keep
+            it small". **Their comments OVERRIDE the original issue body.** Building the body while
+            ignoring a comment that contradicts it means building the wrong thing. If a comment
+            genuinely conflicts with the body and you cannot tell which they mean, build the
+            SMALLER interpretation and say so in the PR.
+
+            If the issue body contains a `## Context for the Builder` section, that is the owner's
+            own attached context - tools, MCP servers, or integrations they thought might help. Treat
+            it as context and a preference, NOT an instruction to auto-install anything: use your
+            judgment on whether it actually helps this change. In the PR description, mention what
+            was attached and either how you used it, or briefly why you didn't.
+
+            Comment on the issue you picked saying you have started, so a human watching knows.
+
+            PLAN: restate the issue - as amended by the comments - as an explicit acceptance
+            checklist before coding.
+
+            ────────────────────────────────────────────────────────────────────────
+            BEFORE YOU BUILD ANYTHING: CHECK IT ISN'T ALREADY DONE
+
+            This step is MANDATORY. You do not get to skip it because the issue is open and
+            labelled and obviously waiting for you. Everything else in this prompt pushes you
+            toward shipping - this is the one place you push back on yourself.
+
+            With the acceptance checklist in front of you, go and READ THE CURRENT `main`.
+            Grep for it, open the files, run the thing if that is what it takes. Take every
+            item on that checklist in turn and answer one question honestly: is this already
+            true of the code as it stands right now?
+
+            The owner does not only work through this queue. They fix things themselves, at
+            night, on their phone, and the `approved` label stays on the issue afterwards
+            because nobody thinks to take it off. An open `approved` issue is NOT evidence
+            that the work is still needed. Only the code is evidence.
+
+            If EVERY item on the checklist is already satisfied:
+            - Do NOT open a pull request. Do not re-do it "properly", do not tidy it, do not
+              refactor it while you are in there.
+            - Comment on the issue in plain English saying this already appears to be done -
+              and prove it. Give concrete `path:line` evidence for each acceptance item: the
+              actual file and the actual line where it already happens. No hand-waving, no
+              "this looks like it's handled somewhere".
+            - Recommend that the owner close the issue, and say plainly that you built
+              nothing because there was nothing left to build.
+            - Then STOP. That is the entire run.
+
+            That is a SUCCESS. A run that says "already done, here's the proof" is exactly as
+            good as a run that ships. The failure here is not coming back empty-handed - it
+            is a second implementation of something that already works, landing as a PR that
+            fights the owner's own change and costs them an evening to untangle.
+
+            If only SOME items are satisfied, build only the ones that are missing, and say
+            in the PR description which parts were already there.
+            ────────────────────────────────────────────────────────────────────────
+
+            BUILD (spend tokens here - this is the point):
+            - Spawn THREE agents with the Task tool, in ONE message, each with
+              `run_in_background: false` so you block until all three return. Each proposes a
+              different implementation approach for this issue.
+            - Judge the three against: smallest honest diff, best fit with existing repo style,
+              easiest for a non-technical owner to verify (a test, a table or a plot they can open).
+            - Implement the winner, grafting in the best ideas from the other two.
+            - Keep the change SMALL. Large changesets are the single best predictor of
+              breakage. If the issue is genuinely big, implement the smallest useful slice and
+              say in the PR what you deliberately left out.
+            - Write or update tests for what you changed. Any new feature or model must keep
+              tests/test_leakage.py and the harness leakage test in tests/test_backtest.py
+              green: sales features see only days <= t - 28, prices and calendar only <= t.
+            - Never edit anything under .github/workflows/ (your token has no `workflow` scope,
+              so the push is rejected). If the issue needs a workflow change, build the rest
+              and say in the PR that the workflow part is left for the owner's crew.
+            - Never hand-edit a `<!-- GENERATED:... -->` region or any file in results/. This
+              runner cannot regenerate them (m5-backtest peaks at about 18 GB of memory; the
+              runner has 16 GB), and the real M5 data is not downloaded here. If your change
+              would move a published number, leave every artifact and generated region as it
+              is, start the PR title with `[needs-regen]`, and say in the description what you
+              expect to change and that the owner's crew must run `uv run m5-backtest`,
+              `uv run m5-plots`, `uv run m5-explain` and `uv run m5-writeup` locally before
+              merging. Never quote a result you did not measure.
+
+            VERIFY: run this project's gates, exactly as CI runs them:
+                uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+            They must pass. Never skip, deselect, xfail or loosen a test or gate to get there. If they do not pass
+            after honest effort, do NOT open a PR - comment on the issue explaining exactly what
+            blocked you, in plain English, and stop. A blocked run that says so is a success.
+            A green-looking broken PR is a failure.
+
+            SHIP: open ONE pull request from a `claude/` branch, with `Closes #<issue>` in the
+            body, using EXACTLY this flag set and adding no assignee/reviewer flags of your own:
+
+                gh pr create ${{ steps.gate.outputs.ship_flags }} --title "…" --body "…"
+
+            ${{ steps.gate.outputs.ship_note }}
+
+            Name the branch `claude/issue-<issue number>-<short-slug>` - the `issue-<n>` part is
+            how the next Builder run knows this issue is already being built and leaves it alone.
+
+            Write the description for a NON-TECHNICAL owner reading on a phone:
+              1. What changed
+              2. Why it matters
+              3. How to check it works - step by step (which test, table or plot to look at)
+              4. What could break
+
+            The owner can only review so much. A PR they cannot understand in two minutes on their
+            phone is a PR that rots in the queue and blocks every build behind it.
+
+            Never push to main. Never merge your own PR. Never report tests green that you did
+            not watch pass.

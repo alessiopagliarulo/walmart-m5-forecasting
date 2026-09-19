@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "autonomousBuildEnabled": true,
+  "prCap": 3,
+  "ideaQueueCap": 6,
+  "scout": {
+    "productSummary": "A 28-day demand forecast for every product in one Walmart store (CA_1, 3,049 item series), built on the real Kaggle M5 data with an evaluation harness designed to be honest. ALREADY EXISTS: m5-download fetches the four M5 files from a pinned HuggingFace mirror and refuses any file whose sha256 differs from provenance/m5_data.json; m5-features builds 52 leakage-tested features (sales inputs at least 28 days old, tests/test_leakage.py); m5-backtest runs six models (seasonal-naive, linear regression, Ridge, a logistic hurdle model, LightGBM and XGBoost with Tweedie loss and in-fold tuning) on 3 walk-forward folds scored with the competition's WRMSSE and writes results/metrics.json; m5-plots and m5-explain draw the forecast plot, exact TreeSHAP for both boosted models and a model-free SNAP-day lift; m5-writeup rewrites every number in README.md, docs/RESULTS.md and docs/RESUME_CLAIMS.md from those artifacts and tests/test_writeup.py fails on drift. There is no web app, live feed or deployment, by design. Every published number comes from a repo command and a committed artifact in results/.",
+    "currentGoals": [
+      "Mostly-zero items (>= 75% zero days, about 31% of forecast rows) are forecast about 24% too low by both boosted models (docs/RESULTS.md, 'Where the models are weak'): propose a model or feature that targets that segment, for example a Croston-type method or a boosted hurdle model, compared on that segment and on overall WRMSSE",
+      "Sudden demand jumps are missed because every sales input is at least 28 days old: propose faster-reacting forecasts, for example a separate model per forecast day with lags as recent as one day, with the leakage tests extended to cover them",
+      "One store only: the pipeline already takes --store, so propose extending the evaluation beyond CA_1 in a way the owner can actually run and review",
+      "Close the other gaps docs/RESULTS.md names under 'What is not shown' and 'What would come next': prediction intervals, new items forecast from similar items, more folds for an error bar",
+      "Checks that could stay green while the thing they guard breaks: a test, leakage check or generated-region check that would not catch its failure",
+      "A proposal that would move a published result must say so in its title with [needs-regen] and include the before/after it expects to measure; the loop's runners cannot run m5-backtest (about 18 GB peak memory, GitHub runners have 16 GB), so the owner's crew regenerates the artifacts locally before merge"
+    ],
+    "offLimits": [
+      "Skipping, deselecting, xfailing or loosening any test or gate (ruff, mypy, pytest, tests/test_leakage.py, tests/test_writeup.py) to get green",
+      "Hand-editing GENERATED regions in README.md, docs/RESULTS.md or docs/RESUME_CLAIMS.md, or any file in results/; rerun the command that writes it instead",
+      "Fabricated, synthetic or substituted data or reference values: provenance/m5_data.json hashes, the documented M5 facts in src/m5/config.py, and published numbers never come from the synthetic test fixture",
+      "Tuning or selecting models toward a target in docs/PLAN.md or docs/RESUME_CLAIMS.md; targets are not results, report what is measured",
+      "Features that use sales newer than 28 days before the forecast day, or prices and calendar fields after it, unless the leakage tests are extended to prove the new rule",
+      "A web app, live data feed or deployment (docs/PLAN.md non-goals)",
+      "Loop machinery: .github/workflows/ (the loop's token cannot push workflow changes; proposals that need one are left for the owner's crew), .github/loop-config.json, the docs/archive/loop-brief.md path, scripts/loop-metrics.mjs, metrics/",
+      "Credentials, secrets, money, git history rewrites; AGENTS.md, CLAUDE.md and .claude/"
+    ],
+    "lenses": [
+      "Forecast weak spots: a segment, series or day type where the committed artifacts show the models are biased or wrong, and a concrete, testable way to do better on it.",
+      "Published-claim integrity: a number or statement in README.md or docs/ that its committed artifact in results/ or the code contradicts, or that overstates what was measured.",
+      "Checks that cannot fail: a test or gate that would stay green if the leakage rule, the metric, the data verification or the write-up generator broke.",
+      "Reviewer's first minute: what a data-science or supply-chain recruiter sees first in the README and docs/RESULTS.md, and where it confuses, buries or oversells the strongest true result."
+    ],
+    "maxPerRun": 2
+  }
+}

@@ -1,0 +1,188 @@
+name: Claude - Auditor (adversarial PR review)
+
+# Every PR is torn apart by an INDEPENDENT agent before the owner ever sees it.
+# This is where tokens are deliberately spent: five parallel reviewers, each with a
+# different lens, then a verification pass that throws out anything unsubstantiated.
+# Goal: the owner should only ever be handed PRs that are actually safe to merge.
+
+on:
+  # NOTE ON FORK PRs: `pull_request` runs a fork's PR with a read-only token and NO access
+  # to repository secrets, so `secrets.CLAUDE_CODE_OAUTH_TOKEN` is empty and the agent step
+  # cannot authenticate - the audit will fail (or no-op) on any PR opened from a fork. That
+  # is deliberate: the alternative (`pull_request_target`) would run untrusted fork code with
+  # this repo's secrets, which is far worse. This loop's own PRs come from `claude/` branches
+  # in this repo, so they are unaffected. Fork PRs must be reviewed by hand, or re-audited via
+  # `workflow_dispatch` after the branch has been pulled into this repo.
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to (re)audit"
+        required: true
+
+# A new push supersedes an in-flight audit of the same PR - don't pay twice.
+concurrency:
+  group: audit-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  # STAND-DOWN GUARD. Every agent step below authenticates with the
+  # CLAUDE_CODE_OAUTH_TOKEN repository secret (and the Claude GitHub App). Until the owner
+  # has installed the app and added that secret, this cheap job notices the missing token,
+  # says so, and ends green; the agent job that depends on it is then skipped, which also
+  # leaves the run green. No agent is started and no failure email is sent.
+  credentials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Is a Claude token configured for this repo?
+        id: check
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "::notice::standing down: no Claude token configured for this repo. Install the Claude GitHub App on this repository, then add the CLAUDE_CODE_OAUTH_TOKEN secret, and this workflow starts doing real work on its next trigger."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Claude token is configured - proceeding."
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  audit:
+    needs: credentials
+    if: needs.credentials.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      # Required by anthropics/claude-code-action: it mints its GitHub App token from OIDC.
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      # Work out which PR we're on. Handles both the normal pull_request trigger
+      # AND a manual/scripted re-run (workflow_dispatch) - the latter matters
+      # because a follow-up push from the @mention agent uses the default
+      # GITHUB_TOKEN identity, which GitHub's own recursion-prevention rule
+      # silently excludes from ever firing `pull_request: synchronize` - so
+      # without this, a fix pushed onto an existing PR would never get
+      # re-audited, and the stale verdict would sit there indefinitely.
+      #
+      # Every `${{ }}` below is passed through `env:` and referenced quoted. A
+      # `workflow_dispatch` input is free text, so pasting it straight into the shell would
+      # be a command-injection hole; anything that is not a plain number is refused outright.
+      - name: Resolve PR number
+        id: meta
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR: ${{ github.event.inputs.pr_number }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            pr="$INPUT_PR"
+          else
+            pr="$EVENT_PR"
+          fi
+          case "$pr" in
+            '' | *[!0-9]*)
+              echo "::error::Refusing to run - '$pr' is not a plain PR number."
+              exit 1
+              ;;
+          esac
+          echo "PR under review: #$pr"
+          echo "pr_number=$pr" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check out the PR branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+        run: gh pr checkout "$PR_NUMBER"
+
+      # The agent runs this project's gates (ruff, mypy, pytest), which need uv and the
+      # locked environment.
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install the locked environment
+        run: uv sync --locked
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The Builder's PRs are authored by the `claude` bot. Without this, the action's
+          # bot-loop guard refuses to run and the Auditor never reviews a single agent PR -
+          # which is the entire point of the Auditor. Scoped to `claude`, not `*`.
+          allowed_bots: "claude"
+          show_full_output: true
+          claude_args: |
+            --model opus
+            --max-turns 135
+            --allowedTools "Bash,BashOutput,KillShell,Read,Write,Edit,Glob,Grep,Task,TodoWrite,WebSearch,WebFetch"
+          prompt: |
+            You are the ADVERSARIAL AUDITOR for PR #${{ steps.meta.outputs.pr_number }}
+            in ${{ github.repository }}. Your job is to find reasons this PR should NOT be
+            merged. Assume it is subtly broken until you prove otherwise.
+
+            Read docs/archive/loop-brief.md first: its off-limits list is part of what you
+            enforce. Then read LEARNINGS.md if it exists - it lists mistakes this loop has
+            made before (it is a maintainer-local note and is normally absent; if so, proceed
+            without it). Check for repeats of them specifically.
+
+            ────────────────────────────────────────────────────────────────────────
+            HOW THIS RUN WORKS - READ THIS FIRST, IT IS NOT OPTIONAL
+
+            You are running inside a one-shot CI job. **There is no second turn.** The moment you
+            stop producing tool calls, this container is destroyed. Nothing resumes you.
+
+            - Spawn the five reviewers below with `run_in_background: false` so you BLOCK and
+              receive their reports. A backgrounded subagent is killed the moment you stop.
+            - NEVER end your turn saying you will "wait for the reviewers" or "report back". There
+              is no later. That sentence means you failed.
+            - Your job is done when the review comment has actually been posted to the PR - not
+              when you have decided on a verdict.
+            ────────────────────────────────────────────────────────────────────────
+
+            Spawn FIVE reviewers with the Task tool, in ONE message, each with
+            `run_in_background: false`, one per lens:
+              1. Correctness  - does it do what the PR claims? Trace the logic. Find the bug.
+              2. Regression   - what existing behavior breaks? Check every caller and import.
+              3. Security     - secrets, injection, authz, unsafe deps, exposed endpoints.
+              4. Tests        - is it really covered? Name the failing case this PR misses.
+              5. Simplicity   - dead code, duplication, over-engineering, style mismatch.
+
+            Then VERIFY each finding yourself before reporting it. Reproduce it in the code.
+            Discard anything you cannot pin to a specific file:line WITH a concrete failure
+            scenario. A false alarm wastes the owner's trust and is worse than a missed nit.
+
+            This project's own rules are blocking issues when broken: a skipped, deselected,
+            xfailed or loosened test or gate; a hand-edited `<!-- GENERATED:... -->` region or
+            file in results/; fabricated data or reference values; a feature that sees sales
+            newer than t - 28 or prices/calendar after t without a leakage test proving it;
+            a published number the PR did not measure. A PR whose change would move a
+            published result must carry `[needs-regen]` in its title and leave the artifacts
+            untouched - the owner's crew regenerates them locally.
+
+            Run this project's gates, exactly as CI runs them:
+                uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+            Report what you actually observed. NEVER claim
+            green if you did not see green.
+
+            Post ONE review comment on the PR, exactly this shape:
+
+              **Verdict:** SHIP / FIX FIRST / DO NOT MERGE
+              **Plain English:** 3 lines a non-technical owner can act on.
+              **Blocking issues:** numbered; each with file:line and the fix.
+              **Non-blocking:** short list.
+              **Tests:** what you ran and what happened.
+
+            If it is genuinely good, say SHIP and keep it short. Do not manufacture findings
+            to look thorough - an auditor that cries wolf gets ignored, and then it is useless.

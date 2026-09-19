@@ -7,3 +7,4 @@ mlruns/
 .ruff_cache/
 .pytest_cache/
 mlflow.db
+LOOP-DASHBOARD.md
