@@ -22,6 +22,7 @@ m5-features = "m5.pipeline:main"
 m5-backtest = "m5.backtest:main"
 m5-plots = "m5.plots:main"
 m5-explain = "m5.explain:main"
+m5-writeup = "m5.writeup:main"
 
 [dependency-groups]
 dev = [
