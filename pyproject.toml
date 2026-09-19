@@ -13,12 +13,14 @@ dependencies = [
     "lightgbm==4.7.0",
     "shap==0.52.0",
     "mlflow==3.16.1",
+    "matplotlib==3.11.2",
 ]
 
 [project.scripts]
 m5-download = "m5.download:main"
 m5-features = "m5.pipeline:main"
 m5-backtest = "m5.backtest:main"
+m5-plots = "m5.plots:main"
 
 [dependency-groups]
 dev = [
