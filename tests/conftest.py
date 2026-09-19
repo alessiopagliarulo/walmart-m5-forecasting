@@ -1,0 +1,48 @@
+"""Shared fixtures. Tests only ever touch the SYNTHETIC fixture, never real M5 data."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+import pytest
+
+from m5.data import load_calendar, load_store_prices, load_store_sales
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "synthetic_m5"
+FIXTURE_STORE = "CA_1"
+FIXTURE_HORIZON = 28
+
+# What the synthetic fixture contains, by construction (see make_synthetic_m5.py).
+FIXTURE_FACTS: dict[str, Any] = {
+    "n_series": 10,
+    "n_items": 5,
+    "n_stores": 2,
+    "n_states": 2,
+    "n_days_sales": 420,
+    "n_days_calendar": 448,
+    "states": ("CA", "TX"),
+    "stores": ("CA_1", "TX_1"),
+    "n_submission_rows": 20,
+}
+
+
+@pytest.fixture(scope="session")
+def fixture_dir() -> Path:
+    return FIXTURE_DIR
+
+
+@pytest.fixture(scope="session")
+def calendar() -> pd.DataFrame:
+    return load_calendar(FIXTURE_DIR)
+
+
+@pytest.fixture(scope="session")
+def store_sales() -> pd.DataFrame:
+    return load_store_sales(FIXTURE_DIR, FIXTURE_STORE, chunksize=3)
+
+
+@pytest.fixture(scope="session")
+def store_prices() -> pd.DataFrame:
+    return load_store_prices(FIXTURE_DIR, FIXTURE_STORE, chunksize=100)
