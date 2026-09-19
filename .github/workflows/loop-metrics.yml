@@ -1,0 +1,85 @@
+name: Loop - Metrics
+
+# Pure bash + node. No agent, no tokens, ~30 seconds a day.
+# Recomputes the loop's scorecard from GitHub's own record and commits it.
+# Also runs immediately whenever a PR is merged or closed, so the dashboard is never stale.
+
+on:
+  schedule:
+    # GitHub cron is UTC only and does not follow daylight saving. 11:00 UTC is
+    # 07:00 America/New_York in summer (EDT) and 06:00 in winter (EST) - either way,
+    # before you look at your phone.
+    - cron: "0 11 * * *"
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+# A burst of PR merges fires this workflow several times at once. Without a concurrency
+# group they race on the same `git push` and all but one fail non-fast-forward - exactly
+# when the loop is busiest and the numbers matter most. Cancelling in progress is safe
+# here: the job is a pure recompute from GitHub's current state, so the survivor produces
+# the same (or fresher) answer than the run it cancelled.
+concurrency:
+  group: loop-metrics-${{ github.repository }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # A closed PR runs on its merge ref, so it checks out the default branch, where the
+      # scorecard lives. Every other trigger checks out the ref it ran on: on the schedule
+      # that is the default branch; a manual run from another branch recomputes there as a
+      # dry run and commits nothing (see the last step).
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.repository.default_branch || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Recompute the scorecard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/loop-metrics.mjs
+
+      - name: Commit if it changed
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          # Only the default branch holds the committed scorecard. On any other branch this
+          # run was a dry run: the numbers above are printed, nothing is committed or pushed.
+          branch=$(git rev-parse --abbrev-ref HEAD)
+          if [ "$branch" != "$DEFAULT_BRANCH" ]; then
+            echo "::notice::Dry run on '$branch': the scorecard was recomputed but is only committed on $DEFAULT_BRANCH."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # LOOP-DASHBOARD.md is a local-only working note (gitignored), so only the
+          # machine-readable scorecard is committed.
+          git add metrics/loop-metrics.json
+          git diff --staged --quiet && echo "No change." && exit 0
+          git commit -m "chore(loop): update metrics dashboard"
+
+          # Something else may have landed on main between checkout and now (an agent PR
+          # merging is the common case, and it is the very event that triggered this run).
+          # Rebase and retry rather than failing the run over a race.
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) - rebasing on the latest main and retrying."
+            git pull --rebase origin "$DEFAULT_BRANCH" || true
+            sleep $(( attempt * 5 ))
+          done
+          echo "::error::Could not push the metrics update after 3 attempts."
+          exit 1

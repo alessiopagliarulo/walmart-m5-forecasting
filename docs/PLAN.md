@@ -115,7 +115,7 @@ document the method; `docs/RESUME_CLAIMS.md` has the measured findings.
 | #4 | XGBoost / LightGBM with walk-forward CV | built |
 | #5 | SHAP explanations | built |
 | #6 | Results write-up ([docs/RESULTS.md](RESULTS.md)) | built |
-| #14 | Autonomous improvement loop, once the project is real | not built |
+| #14 | Autonomous improvement loop ([docs/archive/loop-brief.md](archive/loop-brief.md)) | built; stands down until the Claude token is added |
 
 ## 9. Non-goals for now
 
