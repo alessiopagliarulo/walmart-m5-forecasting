@@ -46,7 +46,8 @@ uv run m5-backtest          # every model on the 3 folds -> results/metrics.json
 
 `m5-backtest` takes about 4 minutes and peaks at about 18 GB of memory on the same
 laptop (exact Ridge fits on 4.5 million training rows). It refuses a feature table that
-was not built from the verified raw files. It logs every model and fold to MLflow in the gitignored `mlruns/` folder (browse with
+was not built from the verified raw files. It logs every model and fold to MLflow in
+the gitignored `mlruns/` folder (browse with
 `uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`) and records package
 versions, the git commit, the seed, fold boundaries and runtimes in `metrics.json`.
 
