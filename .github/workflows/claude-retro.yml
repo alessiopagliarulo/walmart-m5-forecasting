@@ -15,8 +15,6 @@ name: Claude - Retro (the loop improves itself)
 # that and skip without booting an Opus agent. A retro on an empty week is invented content.
 
 on:
-  push: # TEMPORARY proof trigger, reverted before review
-    branches: [fm/m5-loop-14]
   schedule:
     # 22:00 UTC every Sunday. GitHub cron has NO timezone support, so this drifts with DST:
     # that is 18:00 in New York during EDT (Mar-Nov) and 17:00 during EST (Nov-Mar).
