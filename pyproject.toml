@@ -1,0 +1,55 @@
+[project]
+name = "m5-forecasting"
+version = "0.1.0"
+description = "Walmart M5 daily unit-sales forecasting for one store: feature pipeline, baselines, gradient boosting, SHAP."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pandas==3.0.6",
+    "numpy==2.5.3",
+    "pyarrow==25.0.1",
+    "scikit-learn==1.9.1",
+    "xgboost==3.4.1",
+    "lightgbm==4.7.0",
+    "shap==0.52.0",
+    "mlflow==3.16.1",
+]
+
+[project.scripts]
+m5-download = "m5.download:main"
+m5-features = "m5.pipeline:main"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.16.8",
+    "mypy==2.3.1",
+    "pandas-stubs==3.0.5.260914",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/m5"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "NPY", "PD"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["pyarrow.*"]
+ignore_missing_imports = true
