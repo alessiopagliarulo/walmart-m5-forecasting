@@ -107,6 +107,14 @@ to change. The owner's crew then runs `m5-backtest`, `m5-plots`, `m5-explain` an
 - **Credentials, money, history:** no secrets in issues (public repo), no key rotation, no
   force-push or history rewrite. Leave `AGENTS.md`, `CLAUDE.md` and `.claude/` alone.
 
+## How the loop works
+
+- **The loop drafts ideas as proposals.** The Scout files ideas as proposals; nothing is
+  built from them on its own.
+- **The Builder only builds proposals the owner has labelled approved.** Autonomous
+  building is off (`autonomousBuildEnabled: false` in `.github/loop-config.json`).
+- **Only the owner merges loop PRs.** No agent merges or auto-merges a loop PR.
+
 ## How the owner works
 
 - An Industrial Engineering student directing (not coding) a portfolio piece aimed at
