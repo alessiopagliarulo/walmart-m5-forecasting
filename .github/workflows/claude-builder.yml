@@ -28,6 +28,8 @@ name: Claude - Builder (implements work, keeps your queue full)
 # with no product context invents one.
 
 on:
+  push: # TEMPORARY proof trigger, reverted before review
+    branches: [fm/m5-loop-14]
   issues:
     types: [labeled]
   schedule:

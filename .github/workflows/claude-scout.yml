@@ -25,6 +25,8 @@ name: Claude - Scout (finds work worth doing)
 # Every field is optional; a repo without the block behaves exactly as before.
 
 on:
+  push: # TEMPORARY proof trigger, reverted before review
+    branches: [fm/m5-loop-14]
   schedule:
     - cron: "0 * * * *" # every hour, on the hour (UTC - GitHub cron has no timezone)
   workflow_dispatch:

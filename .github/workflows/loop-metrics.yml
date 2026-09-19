@@ -5,6 +5,8 @@ name: Loop - Metrics
 # Also runs immediately whenever a PR is merged or closed, so the dashboard is never stale.
 
 on:
+  push: # TEMPORARY proof trigger, reverted before review
+    branches: [fm/m5-loop-14]
   schedule:
     # GitHub cron is UTC only and does not follow daylight saving. 11:00 UTC is
     # 07:00 America/New_York in summer (EDT) and 06:00 in winter (EST) - either way,
