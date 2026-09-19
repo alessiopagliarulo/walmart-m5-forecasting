@@ -282,7 +282,7 @@ jobs:
 
       # ── Flag approved ideas that existing work already covers ──────────────────
       # Deterministic, before any model spends a token: an approved idea that a
-      # person's PR, branch or commit names ("closes #12", `issue-12`), or whose text the
+      # person's PR, branch or commit says it closes ("closes #12", "fixes #12"), or whose text the
       # dashboard's own duplicate detector scores as the same request as an open or
       # recently merged PR, gets the `covered` label and a comment linking the cover.
       # It is then off limits below. Nothing is closed or un-approved. An idea the owner

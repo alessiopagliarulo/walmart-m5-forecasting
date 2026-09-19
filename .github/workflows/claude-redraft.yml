@@ -351,9 +351,10 @@ jobs:
           key: ${{ steps.embedkey.outputs.key }}
 
       # Backstop, same as the Scout's: the dashboard's own duplicate detector plus any
-      # PR, branch or commit that names this idea. Flags it `covered` with a link if the
-      # rewrite still duplicates existing work; skips it if the agent already flagged it,
-      # or if the owner cleared a flag on it before. Never fails the run.
+      # PR, branch or commit that says it closes this idea ("closes #12"). Flags it
+      # `covered` with a link if the rewrite still duplicates existing work; skips it if
+      # the agent already flagged it, or if the owner cleared a flag on it before. Never
+      # fails the run.
       - name: Flag the idea if existing work already covers it
         id: coverage
         if: success() && steps.meta.outputs.issue_number != ''

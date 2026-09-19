@@ -143,19 +143,28 @@ export function docText(doc) {
 }
 
 /**
- * Issue numbers a PR, branch or commit deliberately points at. Only the forms people
- * use on purpose count - "closes #12", "refs #12", "issue #12", an `/issues/12` link,
- * an `issue-12` branch segment - never a bare "#2", which is as often "step #2" as
- * it is an issue, and a false reference would flag an idea covered by unrelated work.
+ * Issue numbers a PR, branch or commit says it CLOSES, in this repository. Only
+ * GitHub's own closing keywords count - close/closes/closed, fix/fixes/fixed,
+ * resolve/resolves/resolved - followed by `#12`, `owner/name#12` or an
+ * `https://github.com/owner/name/issues/12` link, and the last two only when
+ * owner/name is `repo` itself. A reference here flags an idea as already covered and
+ * skips it, so passing mentions ("see #12", "for #12", "part of #12", "towards #12",
+ * "issue #12", a bare issue link, an `issue-12` branch name) and any issue in another
+ * repository never count: they are as often "related to" as "does". Never a bare "#2".
+ * Without `repo`, only the short `#12` form counts.
  */
-export function referencedIssues(...texts) {
+export function referencedIssues(repo, ...texts) {
+  const self = String(repo ?? "").toLowerCase();
+  const sameRepo = (other) => !!self && other.toLowerCase() === self;
+  const closing =
+    /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s*(?:#(\d+)|([\w.-]+\/[\w.-]+)#(\d+)|https?:\/\/github\.com\/([\w.-]+\/[\w.-]+)\/issues\/(\d+))(?![\w-])/gi;
   const out = new Set();
   for (const text of texts) {
-    const s = String(text ?? "");
-    const keyword = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references|see|issue|idea|part of|towards?|for)\s*:?\s*#(\d+)\b/gi;
-    for (const m of s.matchAll(keyword)) out.add(Number(m[1]));
-    for (const m of s.matchAll(/github\.com\/[\w.-]+\/[\w.-]+\/issues\/(\d+)\b/gi)) out.add(Number(m[1]));
-    for (const m of s.matchAll(/(?:^|[/_-])issue-(\d+)(?=-|$|\/)/gi)) out.add(Number(m[1]));
+    for (const m of String(text ?? "").matchAll(closing)) {
+      if (m[1]) out.add(Number(m[1]));
+      else if (m[3] && sameRepo(m[2])) out.add(Number(m[3]));
+      else if (m[5] && sameRepo(m[4])) out.add(Number(m[5]));
+    }
   }
   return [...out];
 }
@@ -230,7 +239,7 @@ export function collect({ repo, lookbackDays = DEFAULT_LOOKBACK_DAYS, now = new 
     author: p.author?.login ?? "",
     loop: isLoopAuthor(p.author?.login),
     date: p.updatedAt ?? null,
-    refs: referencedIssues(p.title, p.body, p.headRefName),
+    refs: referencedIssues(repo, p.title, p.body),
   }));
 
   const mergedPrs = json("merged pull requests", [
@@ -249,7 +258,7 @@ export function collect({ repo, lookbackDays = DEFAULT_LOOKBACK_DAYS, now = new 
       author: p.author?.login ?? "",
       loop: isLoopAuthor(p.author?.login),
       date: p.mergedAt ?? null,
-      refs: referencedIssues(p.title, p.body, p.headRefName),
+      refs: referencedIssues(repo, p.title, p.body),
     }));
 
   const commits = json("recent commits", [
@@ -267,7 +276,7 @@ export function collect({ repo, lookbackDays = DEFAULT_LOOKBACK_DAYS, now = new 
         author: c.commit?.author?.name ?? c.author?.login ?? "",
         loop: isLoopAuthor(who),
         date: c.commit?.author?.date ?? null,
-        refs: referencedIssues(message),
+        refs: referencedIssues(repo, message),
       };
     });
 
@@ -303,7 +312,7 @@ export function collect({ repo, lookbackDays = DEFAULT_LOOKBACK_DAYS, now = new 
       headline: n.target?.messageHeadline ?? "",
       ahead: null,
       files: [],
-      refs: referencedIssues(n.name, n.target?.messageHeadline),
+      refs: referencedIssues(repo, n.target?.messageHeadline),
     };
     if (i < MAX_BRANCHES_DETAILED) {
       const cmp = json(`compare ${n.name}`, [
@@ -313,7 +322,7 @@ export function collect({ repo, lookbackDays = DEFAULT_LOOKBACK_DAYS, now = new 
       if (cmp) {
         branch.ahead = typeof cmp.ahead === "number" ? cmp.ahead : null;
         branch.files = Array.isArray(cmp.files) ? cmp.files : [];
-        branch.refs = [...new Set([...branch.refs, ...referencedIssues(...(cmp.messages ?? []))])];
+        branch.refs = [...new Set([...branch.refs, ...referencedIssues(repo, ...(cmp.messages ?? []))])];
       }
     }
     // Zero commits ahead means it is already merged (or never diverged): not in flight.
@@ -429,8 +438,9 @@ export function renderDigest(data) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Work a PERSON did that names this idea on purpose - a PR, a pushed branch or a
- * commit saying "closes #12", "refs #12", `issue-12`… That is the strongest cover
+ * Work a PERSON did that says it closes this idea - a PR, a pushed branch or a
+ * commit saying "closes #12", "fixes #12", "resolves #12" (see `referencedIssues`
+ * for exactly what counts; a passing mention never does). That is the strongest cover
  * there is and needs no similarity score: the owner built it (or is building it) by
  * hand. The loop's own PRs are left out: they are the Builder's claim on the idea,
  * which the Builder's gate already handles.
@@ -535,10 +545,10 @@ export function coverComment(matches) {
     ...matches.map(
       (m) =>
         `- [${describeCover(m.item).replace(/[[\]]/g, "")}](${m.item.url}) · ` +
-        (m.score === null ? "points at this idea directly" : `${Math.round(m.score * 100)}% similar`),
+        (m.score === null ? "says it closes this idea" : `${Math.round(m.score * 100)}% similar`),
     ),
     "",
-    "Found automatically: work that names this idea directly, or whose text the dashboard's own duplicate detector " +
+    "Found automatically: work that says it closes this idea, or whose text the dashboard's own duplicate detector " +
       `(${EMBED_MODEL}, threshold ${EMBED_THRESHOLD}) scores as the same request. ` +
       "It is a flag, not a verdict: nothing was closed or moved. Decline the idea if it really is covered, or clear the flag in the dashboard to keep it - once cleared, it is not flagged again automatically.",
   ];
