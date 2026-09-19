@@ -1,6 +1,6 @@
 {
   "generated_by": "m5-explain",
-  "generated_at": "2026-09-19T17:57:59+00:00",
+  "generated_at": "2026-09-19T18:04:10+00:00",
   "method": "1. Daily units summed over each category's items, for one store or a whole state.\n   NON_FOOD is HOBBIES plus HOUSEHOLD.\n2. Christmas Day is dropped: the stores close (CA_1 sells nothing, the other stores a\n   handful of units). So is any other day on which nothing sold at all.\n3. Days are grouped into cells of the same calendar month and weekday (for example the\n   Tuesdays of March 2014). Only cells holding both SNAP and non-SNAP days are kept, so\n   season, trend and the weekly cycle are the same on both sides of each comparison.\n4. In every cell: log(mean units on SNAP days) - log(mean units on other days). A\n   category's lift is exp(mean of those log ratios) - 1.\n5. FOODS vs NON_FOOD: the same with each cell's FOODS log ratio minus its NON_FOOD log\n   ratio, i.e. how much more the SNAP days lift food than everything else.\n6. 95% intervals come from a bootstrap that resamples whole calendar months.\n\nCaveat: in each state SNAP falls on the same days every month (California: the 1st to\nthe 10th), so step 4 compares the start of the month with the rest of it. Anything else\ntied to the start of the month, such as paydays, is mixed into a category's lift. The\nnon-food categories show how big that mix is, and step 5 nets it out, assuming it\nlifts food and non-food alike.",
   "bootstrap": {
     "reps": 2000,

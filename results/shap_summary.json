@@ -1,6 +1,6 @@
 {
   "generated_by": "m5-explain",
-  "generated_at": "2026-09-19T17:57:59+00:00",
+  "generated_at": "2026-09-19T18:04:10+00:00",
   "store_id": "CA_1",
   "source": {
     "metrics_json_generated_at": "2026-09-19T17:01:55+00:00",
@@ -42,8 +42,8 @@
       "shap": "0.52.0"
     },
     "git": {
-      "commit": "0211f734a7363e93f30f46e3cd42e51753f23ef0",
-      "dirty": true
+      "commit": "ee6f555b3eee78b998c3f9393eb794e06114ae75",
+      "dirty": false
     }
   },
   "models": {
