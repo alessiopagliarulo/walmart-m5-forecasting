@@ -15,7 +15,7 @@ from m5 import backtest, config, pipeline
 from m5.download import sha256_file
 from m5.evaluation import make_folds
 from m5.features import TARGET, build_features
-from m5.models import MODELS, SeasonalNaive
+from m5.models import MODELS, LinearDesign, SeasonalNaive
 from m5.verify import verify_raw
 from tests.conftest import FIXTURE_FACTS, FIXTURE_HORIZON, FIXTURE_STORE
 
@@ -123,3 +123,21 @@ def test_backtest_stops_on_unverified_features(
     args = ["--features-dir", str(fixture_features), "--results-dir", str(results)]
     assert backtest.main(args) == 1
     assert not results.exists()
+
+
+def test_linear_design_uses_training_statistics_only() -> None:
+    train = pd.DataFrame(
+        {"x": [1.0, np.nan, 3.0, np.nan], "event": pd.Categorical(["A", None, "A", "B"])}
+    )
+    test = pd.DataFrame({"x": [np.nan, 5.0], "event": pd.Categorical(["C", "B"])})
+    design = LinearDesign(["x"], ["event"]).fit(train)
+    assert design.names_ == ["x", "x_missing", "event=A", "event=B", "event=none"]
+
+    # x filled with 0 -> [1, 0, 3, 0]: mean 1, std 1.2247; missing flag [0, 1, 0, 1].
+    out = design.transform(test)
+    std_x = np.std([1.0, 0.0, 3.0, 0.0])
+    np.testing.assert_allclose(out[:, 0], [(0 - 1) / std_x, (5 - 1) / std_x], rtol=1e-6)
+    np.testing.assert_allclose(out[:, 1], [(1 - 0.5) / 0.5, (0 - 0.5) / 0.5])
+    # The unseen category "C" gets no indicator at all.
+    raw_onehot = out[:, 2:] * np.array(design.std_[2:]) + np.array(design.mean_[2:])
+    np.testing.assert_allclose(raw_onehot, [[0, 0, 0], [0, 1, 0]], atol=1e-6)
