@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 
 from m5.data import load_calendar, load_store_prices, load_store_sales
+from m5.features import build_features
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "synthetic_m5"
 FIXTURE_STORE = "CA_1"
@@ -46,3 +47,10 @@ def store_sales() -> pd.DataFrame:
 @pytest.fixture(scope="session")
 def store_prices() -> pd.DataFrame:
     return load_store_prices(FIXTURE_DIR, FIXTURE_STORE, chunksize=100)
+
+
+@pytest.fixture(scope="session")
+def feature_panel(
+    store_sales: pd.DataFrame, calendar: pd.DataFrame, store_prices: pd.DataFrame
+) -> pd.DataFrame:
+    return build_features(store_sales, calendar, store_prices, FIXTURE_STORE, FIXTURE_HORIZON)
