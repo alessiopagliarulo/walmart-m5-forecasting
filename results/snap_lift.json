@@ -1,0 +1,188 @@
+{
+  "generated_by": "m5-explain",
+  "generated_at": "2026-09-19T18:04:10+00:00",
+  "method": "1. Daily units summed over each category's items, for one store or a whole state.\n   NON_FOOD is HOBBIES plus HOUSEHOLD.\n2. Christmas Day is dropped: the stores close (CA_1 sells nothing, the other stores a\n   handful of units). So is any other day on which nothing sold at all.\n3. Days are grouped into cells of the same calendar month and weekday (for example the\n   Tuesdays of March 2014). Only cells holding both SNAP and non-SNAP days are kept, so\n   season, trend and the weekly cycle are the same on both sides of each comparison.\n4. In every cell: log(mean units on SNAP days) - log(mean units on other days). A\n   category's lift is exp(mean of those log ratios) - 1.\n5. FOODS vs NON_FOOD: the same with each cell's FOODS log ratio minus its NON_FOOD log\n   ratio, i.e. how much more the SNAP days lift food than everything else.\n6. 95% intervals come from a bootstrap that resamples whole calendar months.\n\nCaveat: in each state SNAP falls on the same days every month (California: the 1st to\nthe 10th), so step 4 compares the start of the month with the rest of it. Anything else\ntied to the start of the month, such as paydays, is mixed into a category's lift. The\nnon-food categories show how big that mix is, and step 5 nets it out, assuming it\nlifts food and non-food alike.",
+  "bootstrap": {
+    "reps": 2000,
+    "seed": 0,
+    "resampled_unit": "month"
+  },
+  "raw_sha256": {
+    "calendar.csv": "d12b5914ef03e66649adf5dd9e996e6602251c22b7a6af8f1f7e3aa12f8860f5",
+    "sales_train_evaluation.csv": "4b4a47c44c38380d2a9168216fea8c9ff2f31b1ddb772f8a0995952a038b8aa0",
+    "sell_prices.csv": "9da3ad1f8b8ccacdbdc70612191dd375ec24a4ac6625c24b75b3bc60b0bed2ef",
+    "sample_submission.csv": "eb7597afbec367475ef25dc6dbbc009b8faa47fa2107252c72a029e3cdf72343"
+  },
+  "scopes": {
+    "store CA_1": {
+      "snap_column": "snap_CA",
+      "n_days": 1936,
+      "n_snap_days": 640,
+      "first_date": "2011-01-29",
+      "last_date": "2016-05-22",
+      "dropped_days": [
+        "2011-12-25",
+        "2012-12-25",
+        "2013-12-25",
+        "2014-12-25",
+        "2015-12-25"
+      ],
+      "snap_days_of_month": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "categories": {
+        "FOODS": {
+          "lift": 0.11845639613611493,
+          "lift_ci95": [
+            0.10310378631562345,
+            0.13437333819545208
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.8683035714285714,
+          "unmatched_lift": 0.11537874195109032,
+          "mean_daily_units_snap_days": 3036.54375,
+          "mean_daily_units_other_days": 2722.4328703703704
+        },
+        "HOBBIES": {
+          "lift": 0.024030803032329445,
+          "lift_ci95": [
+            -0.00398191272145594,
+            0.05145124876963882
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.5513392857142857,
+          "unmatched_lift": 0.041597306982594784,
+          "mean_daily_units_snap_days": 473.44375,
+          "mean_daily_units_other_days": 454.5362654320988
+        },
+        "HOUSEHOLD": {
+          "lift": 0.04124670222121346,
+          "lift_ci95": [
+            0.025599291487225596,
+            0.055995397083150836
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.6540178571428571,
+          "unmatched_lift": 0.048057173121140995,
+          "mean_daily_units_snap_days": 782.5453125,
+          "mean_daily_units_other_days": 746.6628086419753
+        },
+        "NON_FOOD": {
+          "lift": 0.03790465332606641,
+          "lift_ci95": [
+            0.022284954907905108,
+            0.052080834220698154
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.6339285714285714,
+          "unmatched_lift": 0.045612746137154714,
+          "mean_daily_units_snap_days": 1255.9890625,
+          "mean_daily_units_other_days": 1201.1990740740741
+        }
+      },
+      "foods_vs_non_food": {
+        "lift": 0.07760996402888515,
+        "lift_ci95": [
+          0.05753235584762505,
+          0.09690570546353708
+        ],
+        "n_cells": 448,
+        "share_of_cells_higher_on_snap_days": 0.7477678571428571
+      }
+    },
+    "state CA (all stores)": {
+      "snap_column": "snap_CA",
+      "n_days": 1936,
+      "n_snap_days": 640,
+      "first_date": "2011-01-29",
+      "last_date": "2016-05-22",
+      "dropped_days": [
+        "2011-12-25",
+        "2012-12-25",
+        "2013-12-25",
+        "2014-12-25",
+        "2015-12-25"
+      ],
+      "snap_days_of_month": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "categories": {
+        "FOODS": {
+          "lift": 0.09848479934032746,
+          "lift_ci95": [
+            0.0844342892397483,
+            0.1123219399828182
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.875,
+          "unmatched_lift": 0.09821184747096412,
+          "mean_daily_units_snap_days": 10733.3828125,
+          "mean_daily_units_other_days": 9773.50848765432
+        },
+        "HOBBIES": {
+          "lift": 0.014113080823239978,
+          "lift_ci95": [
+            -0.006525756427433988,
+            0.03329400257351041
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.5825892857142857,
+          "unmatched_lift": 0.025969026298857223,
+          "mean_daily_units_snap_days": 1626.5203125,
+          "mean_daily_units_other_days": 1585.3503086419753
+        },
+        "HOUSEHOLD": {
+          "lift": 0.0246706897646733,
+          "lift_ci95": [
+            0.009043612687037994,
+            0.03795298135878545
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.6428571428571429,
+          "unmatched_lift": 0.03221907600904572,
+          "mean_daily_units_snap_days": 3463.5203125,
+          "mean_daily_units_other_days": 3355.412037037037
+        },
+        "NON_FOOD": {
+          "lift": 0.022315435694703643,
+          "lift_ci95": [
+            0.008930321407748899,
+            0.034656602903330606
+          ],
+          "n_cells": 448,
+          "share_of_cells_higher_on_snap_days": 0.6138392857142857,
+          "unmatched_lift": 0.030213612571659,
+          "mean_daily_units_snap_days": 5090.040625,
+          "mean_daily_units_other_days": 4940.7623456790125
+        }
+      },
+      "foods_vs_non_food": {
+        "lift": 0.07450671386357746,
+        "lift_ci95": [
+          0.058266313905993454,
+          0.09098098339358286
+        ],
+        "n_cells": 448,
+        "share_of_cells_higher_on_snap_days": 0.7946428571428571
+      }
+    }
+  }
+}

@@ -21,6 +21,7 @@ m5-download = "m5.download:main"
 m5-features = "m5.pipeline:main"
 m5-backtest = "m5.backtest:main"
 m5-plots = "m5.plots:main"
+m5-explain = "m5.explain:main"
 
 [dependency-groups]
 dev = [
@@ -54,5 +55,5 @@ strict = true
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["pyarrow.*", "scipy.*", "sklearn.*"]
+module = ["pyarrow.*", "scipy.*", "shap.*", "sklearn.*"]
 ignore_missing_imports = true

@@ -1,0 +1,3679 @@
+{
+  "generated_by": "m5-explain",
+  "generated_at": "2026-09-19T18:04:10+00:00",
+  "store_id": "CA_1",
+  "source": {
+    "metrics_json_generated_at": "2026-09-19T17:01:55+00:00",
+    "metrics_json_git": {
+      "commit": "3d6a4a1a5972500681c3e9e7aa2c6a8bbd15ae25",
+      "dirty": false
+    },
+    "raw_sha256": {
+      "calendar.csv": "d12b5914ef03e66649adf5dd9e996e6602251c22b7a6af8f1f7e3aa12f8860f5",
+      "sales_train_evaluation.csv": "4b4a47c44c38380d2a9168216fea8c9ff2f31b1ddb772f8a0995952a038b8aa0",
+      "sell_prices.csv": "9da3ad1f8b8ccacdbdc70612191dd375ec24a4ac6625c24b75b3bc60b0bed2ef",
+      "sample_submission.csv": "eb7597afbec367475ef25dc6dbbc009b8faa47fa2107252c72a029e3cdf72343"
+    }
+  },
+  "method": {
+    "algorithm": "exact TreeSHAP from the boosting library (LightGBM pred_contrib, XGBoost pred_contribs)",
+    "output_space": "raw model output = log(expected daily units) (Tweedie, log link)",
+    "rows": "every row of each fold's 28-day test window; no sampling",
+    "models": "rebuilt per fold from the parameters and rounds in results/metrics.json, trained on the fold's training days, and required to reproduce the recorded WRMSSE within 1e-09",
+    "importance": "mean |SHAP| per feature; share = its fraction of the sum over features. Group importance sums a group's SHAP values per row first.",
+    "plot_sample": {
+      "size": 5000,
+      "seed": 0,
+      "fold": "latest"
+    }
+  },
+  "environment": {
+    "python": "3.12.13",
+    "platform": "macOS-26.5-arm64-arm-64bit",
+    "packages": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "scikit-learn": "1.9.1",
+      "scipy": "1.18.1",
+      "mlflow": "3.16.1",
+      "pyarrow": "25.0.1",
+      "lightgbm": "4.7.0",
+      "xgboost": "3.4.1",
+      "shap": "0.52.0"
+    },
+    "git": {
+      "commit": "ee6f555b3eee78b998c3f9393eb794e06114ae75",
+      "dirty": false
+    }
+  },
+  "models": {
+    "lightgbm": {
+      "mean_importance": [
+        {
+          "rank": 1,
+          "feature": "roll_mean_14",
+          "mean_abs_shap": 0.25265872994111516,
+          "share": 0.15464604112891975
+        },
+        {
+          "rank": 2,
+          "feature": "roll_mean_28",
+          "mean_abs_shap": 0.20652732567622087,
+          "share": 0.1264101711752224
+        },
+        {
+          "rank": 3,
+          "feature": "item_id",
+          "mean_abs_shap": 0.19683998265447966,
+          "share": 0.12048079265060425
+        },
+        {
+          "rank": 4,
+          "feature": "roll_std_182",
+          "mean_abs_shap": 0.131327406916336,
+          "share": 0.0803821960795551
+        },
+        {
+          "rank": 5,
+          "feature": "day_of_week",
+          "mean_abs_shap": 0.08100458507815116,
+          "share": 0.04958086506073392
+        },
+        {
+          "rank": 6,
+          "feature": "roll_mean_7",
+          "mean_abs_shap": 0.08020314054264246,
+          "share": 0.04909032105843599
+        },
+        {
+          "rank": 7,
+          "feature": "dept_id",
+          "mean_abs_shap": 0.07276248031038857,
+          "share": 0.04453608044869482
+        },
+        {
+          "rank": 8,
+          "feature": "same_dow_mean_4",
+          "mean_abs_shap": 0.06326773140808009,
+          "share": 0.03872458393085287
+        },
+        {
+          "rank": 9,
+          "feature": "wday",
+          "mean_abs_shap": 0.05956089847692783,
+          "share": 0.036455724912751224
+        },
+        {
+          "rank": 10,
+          "feature": "roll_mean_56",
+          "mean_abs_shap": 0.04310008976475712,
+          "share": 0.026380478742904206
+        },
+        {
+          "rank": 11,
+          "feature": "zero_frac_112",
+          "mean_abs_shap": 0.041067063686376214,
+          "share": 0.025136114716350546
+        },
+        {
+          "rank": 12,
+          "feature": "price_rel_item_mean",
+          "mean_abs_shap": 0.03597399590977196,
+          "share": 0.0220187762850338
+        },
+        {
+          "rank": 13,
+          "feature": "roll_mean_182",
+          "mean_abs_shap": 0.030987973704942638,
+          "share": 0.018966957750453782
+        },
+        {
+          "rank": 14,
+          "feature": "lag_364",
+          "mean_abs_shap": 0.02971724224183692,
+          "share": 0.018189175046673632
+        },
+        {
+          "rank": 15,
+          "feature": "roll_std_14",
+          "mean_abs_shap": 0.028855961759020395,
+          "share": 0.0176620069690053
+        },
+        {
+          "rank": 16,
+          "feature": "zero_frac_28",
+          "mean_abs_shap": 0.02680792537635982,
+          "share": 0.016408455513489528
+        },
+        {
+          "rank": 17,
+          "feature": "roll_mean_112",
+          "mean_abs_shap": 0.025103153088440792,
+          "share": 0.015365007359473982
+        },
+        {
+          "rank": 18,
+          "feature": "sell_price",
+          "mean_abs_shap": 0.023565602732358026,
+          "share": 0.014423911535632957
+        },
+        {
+          "rank": 19,
+          "feature": "roll_std_112",
+          "mean_abs_shap": 0.022139307051367792,
+          "share": 0.013550911894592165
+        },
+        {
+          "rank": 20,
+          "feature": "lag_28",
+          "mean_abs_shap": 0.021273151940138933,
+          "share": 0.013020760179722307
+        },
+        {
+          "rank": 21,
+          "feature": "roll_std_7",
+          "mean_abs_shap": 0.019077459099088617,
+          "share": 0.011676831927242455
+        },
+        {
+          "rank": 22,
+          "feature": "event_name_1",
+          "mean_abs_shap": 0.018812391892526863,
+          "share": 0.01151459097029064
+        },
+        {
+          "rank": 23,
+          "feature": "day_of_month",
+          "mean_abs_shap": 0.01861688834103219,
+          "share": 0.011394928173472412
+        },
+        {
+          "rank": 24,
+          "feature": "roll_std_28",
+          "mean_abs_shap": 0.01644332269185357,
+          "share": 0.010064543417491
+        },
+        {
+          "rank": 25,
+          "feature": "week_of_year",
+          "mean_abs_shap": 0.014066230912418997,
+          "share": 0.008609585446415427
+        },
+        {
+          "rank": 26,
+          "feature": "price_n_changes",
+          "mean_abs_shap": 0.008280419436612858,
+          "share": 0.0050682360552417125
+        },
+        {
+          "rank": 27,
+          "feature": "price_rel_dept",
+          "mean_abs_shap": 0.007074754834082987,
+          "share": 0.004330279137014618
+        },
+        {
+          "rank": 28,
+          "feature": "price_rel_item_max",
+          "mean_abs_shap": 0.006820513735943534,
+          "share": 0.004174664568190105
+        },
+        {
+          "rank": 29,
+          "feature": "is_weekend",
+          "mean_abs_shap": 0.006768504330446564,
+          "share": 0.004142830921818774
+        },
+        {
+          "rank": 30,
+          "feature": "lag_29",
+          "mean_abs_shap": 0.006754521490103846,
+          "share": 0.004134272377638476
+        },
+        {
+          "rank": 31,
+          "feature": "snap",
+          "mean_abs_shap": 0.006301785269540809,
+          "share": 0.0038571639468232785
+        },
+        {
+          "rank": 32,
+          "feature": "price_item_std",
+          "mean_abs_shap": 0.0042022304783492425,
+          "share": 0.002572079371805018
+        },
+        {
+          "rank": 33,
+          "feature": "roll_std_56",
+          "mean_abs_shap": 0.004166989976737282,
+          "share": 0.002550509548894259
+        },
+        {
+          "rank": 34,
+          "feature": "cat_id",
+          "mean_abs_shap": 0.004042467610800808,
+          "share": 0.0024742925468988386
+        },
+        {
+          "rank": 35,
+          "feature": "month",
+          "mean_abs_shap": 0.003707653279692718,
+          "share": 0.002269361132768954
+        },
+        {
+          "rank": 36,
+          "feature": "days_since_release",
+          "mean_abs_shap": 0.003287176694257432,
+          "share": 0.002011998011612888
+        },
+        {
+          "rank": 37,
+          "feature": "year",
+          "mean_abs_shap": 0.003142261672408828,
+          "share": 0.0019232991788663586
+        },
+        {
+          "rank": 38,
+          "feature": "lag_56",
+          "mean_abs_shap": 0.002150591968202608,
+          "share": 0.0013163231448353138
+        },
+        {
+          "rank": 39,
+          "feature": "lag_32",
+          "mean_abs_shap": 0.0016134438671466659,
+          "share": 0.0009875483293061683
+        },
+        {
+          "rank": 40,
+          "feature": "quarter",
+          "mean_abs_shap": 0.0014722740392242592,
+          "share": 0.0009011418353760394
+        },
+        {
+          "rank": 41,
+          "feature": "lag_33",
+          "mean_abs_shap": 0.0014341138249486056,
+          "share": 0.0008777849299260022
+        },
+        {
+          "rank": 42,
+          "feature": "lag_34",
+          "mean_abs_shap": 0.0012992696178497972,
+          "share": 0.0007952501890846352
+        },
+        {
+          "rank": 43,
+          "feature": "price_change_1w",
+          "mean_abs_shap": 0.0009025031367602912,
+          "share": 0.0005523994252600693
+        },
+        {
+          "rank": 44,
+          "feature": "lag_49",
+          "mean_abs_shap": 0.00027921953728103464,
+          "share": 0.00017090324192013646
+        },
+        {
+          "rank": 45,
+          "feature": "lag_42",
+          "mean_abs_shap": 0.00016537431667225657,
+          "share": 0.00010122145149595741
+        },
+        {
+          "rank": 46,
+          "feature": "event_type_1",
+          "mean_abs_shap": 5.96167265070602e-05,
+          "share": 3.648989584302547e-05
+        },
+        {
+          "rank": 47,
+          "feature": "lag_31",
+          "mean_abs_shap": 4.4836299445502596e-05,
+          "share": 2.7443168932788285e-05
+        },
+        {
+          "rank": 48,
+          "feature": "lag_30",
+          "mean_abs_shap": 3.332968179237292e-05,
+          "share": 2.040025825538811e-05
+        },
+        {
+          "rank": 49,
+          "feature": "lag_35",
+          "mean_abs_shap": 1.349016396510177e-05,
+          "share": 8.25698938591677e-06
+        },
+        {
+          "rank": 50,
+          "feature": "event_name_2",
+          "mean_abs_shap": 9.86475641407966e-06,
+          "share": 6.037968790922375e-06
+        },
+        {
+          "rank": 51,
+          "feature": "event_type_2",
+          "mean_abs_shap": 0.0,
+          "share": 0.0
+        },
+        {
+          "rank": 52,
+          "feature": "has_event",
+          "mean_abs_shap": 0.0,
+          "share": 0.0
+        }
+      ],
+      "mean_group_importance": [
+        {
+          "group": "rolling means",
+          "rank": 1,
+          "mean_abs_shap": 0.5812109510078379,
+          "share": 0.41439671620203583
+        },
+        {
+          "group": "product identity",
+          "rank": 2,
+          "mean_abs_shap": 0.2342130314920031,
+          "share": 0.16699119480407246
+        },
+        {
+          "group": "rolling std devs",
+          "rank": 3,
+          "mean_abs_shap": 0.18129370027149727,
+          "share": 0.12926032093915496
+        },
+        {
+          "group": "weekday",
+          "rank": 4,
+          "mean_abs_shap": 0.12523794991754736,
+          "share": 0.08929321634376221
+        },
+        {
+          "group": "same-weekday mean",
+          "rank": 5,
+          "mean_abs_shap": 0.06326773140808009,
+          "share": 0.04510916405067397
+        },
+        {
+          "group": "zero-sales share",
+          "rank": 6,
+          "mean_abs_shap": 0.06251353738302073,
+          "share": 0.04457143239434188
+        },
+        {
+          "group": "price",
+          "rank": 7,
+          "mean_abs_shap": 0.05891233968413546,
+          "share": 0.042003819898010476
+        },
+        {
+          "group": "sales lags",
+          "rank": 8,
+          "mean_abs_shap": 0.043766211357199984,
+          "share": 0.031204804788310565
+        },
+        {
+          "group": "other calendar",
+          "rank": 9,
+          "mean_abs_shap": 0.02366607371720943,
+          "share": 0.016873638077192114
+        },
+        {
+          "group": "events",
+          "rank": 10,
+          "mean_abs_shap": 0.01887670458110236,
+          "share": 0.013458873026326123
+        },
+        {
+          "group": "snap",
+          "rank": 11,
+          "mean_abs_shap": 0.006301785269540809,
+          "share": 0.004493100340555792
+        },
+        {
+          "group": "days since release",
+          "rank": 12,
+          "mean_abs_shap": 0.003287176694257432,
+          "share": 0.0023437191355635237
+        }
+      ],
+      "folds": [
+        {
+          "fold": 1,
+          "test_days": [
+            1858,
+            1885
+          ],
+          "params": {
+            "tweedie_variance_power": 1.1,
+            "num_leaves": 31
+          },
+          "rounds": 245,
+          "wrmsse_recorded": 0.572829963528319,
+          "wrmsse_rebuilt": 0.572829963528319,
+          "n_rows": 85372,
+          "base_value": -0.3172186943731253,
+          "max_additivity_error": 1.4432899320127035e-14,
+          "importance": [
+            {
+              "rank": 1,
+              "feature": "roll_mean_14",
+              "mean_abs_shap": 0.27945600682063626,
+              "share": 0.17134209029335454
+            },
+            {
+              "rank": 2,
+              "feature": "roll_mean_28",
+              "mean_abs_shap": 0.19891826875255586,
+              "share": 0.12196220919836512
+            },
+            {
+              "rank": 3,
+              "feature": "item_id",
+              "mean_abs_shap": 0.18881412078046536,
+              "share": 0.11576708083498545
+            },
+            {
+              "rank": 4,
+              "feature": "roll_std_182",
+              "mean_abs_shap": 0.1297862987537696,
+              "share": 0.07957551520508786
+            },
+            {
+              "rank": 5,
+              "feature": "day_of_week",
+              "mean_abs_shap": 0.08479351295024615,
+              "share": 0.051989212604532715
+            },
+            {
+              "rank": 6,
+              "feature": "dept_id",
+              "mean_abs_shap": 0.07658587738381716,
+              "share": 0.04695688765894426
+            },
+            {
+              "rank": 7,
+              "feature": "roll_mean_7",
+              "mean_abs_shap": 0.07157514772595132,
+              "share": 0.04388467281109996
+            },
+            {
+              "rank": 8,
+              "feature": "same_dow_mean_4",
+              "mean_abs_shap": 0.059947964099401785,
+              "share": 0.03675572979977175
+            },
+            {
+              "rank": 9,
+              "feature": "wday",
+              "mean_abs_shap": 0.05691610466541086,
+              "share": 0.034896814191530574
+            },
+            {
+              "rank": 10,
+              "feature": "roll_mean_56",
+              "mean_abs_shap": 0.04177512233953553,
+              "share": 0.02561346548013461
+            },
+            {
+              "rank": 11,
+              "feature": "zero_frac_112",
+              "mean_abs_shap": 0.04130631203174183,
+              "share": 0.025326025109815426
+            },
+            {
+              "rank": 12,
+              "feature": "price_rel_item_mean",
+              "mean_abs_shap": 0.03408945259719466,
+              "share": 0.02090117199988644
+            },
+            {
+              "rank": 13,
+              "feature": "roll_mean_112",
+              "mean_abs_shap": 0.03344325765962605,
+              "share": 0.020504972281012432
+            },
+            {
+              "rank": 14,
+              "feature": "roll_mean_182",
+              "mean_abs_shap": 0.030710612618102585,
+              "share": 0.0188295131675323
+            },
+            {
+              "rank": 15,
+              "feature": "lag_364",
+              "mean_abs_shap": 0.02927032036056397,
+              "share": 0.017946430750204287
+            },
+            {
+              "rank": 16,
+              "feature": "zero_frac_28",
+              "mean_abs_shap": 0.027331300751753933,
+              "share": 0.01675756500824672
+            },
+            {
+              "rank": 17,
+              "feature": "roll_std_112",
+              "mean_abs_shap": 0.025178382737759873,
+              "share": 0.015437552327378772
+            },
+            {
+              "rank": 18,
+              "feature": "sell_price",
+              "mean_abs_shap": 0.023323593766846156,
+              "share": 0.0143003306839972
+            },
+            {
+              "rank": 19,
+              "feature": "roll_std_14",
+              "mean_abs_shap": 0.021071942420717908,
+              "share": 0.012919781907655884
+            },
+            {
+              "rank": 20,
+              "feature": "roll_std_7",
+              "mean_abs_shap": 0.020968481898695705,
+              "share": 0.012856347443291324
+            },
+            {
+              "rank": 21,
+              "feature": "lag_28",
+              "mean_abs_shap": 0.01975704104262155,
+              "share": 0.012113580054219806
+            },
+            {
+              "rank": 22,
+              "feature": "day_of_month",
+              "mean_abs_shap": 0.019339656429115934,
+              "share": 0.011857670177928482
+            },
+            {
+              "rank": 23,
+              "feature": "event_name_1",
+              "mean_abs_shap": 0.01774927109299126,
+              "share": 0.010882561605514077
+            },
+            {
+              "rank": 24,
+              "feature": "roll_std_28",
+              "mean_abs_shap": 0.015851157042849947,
+              "share": 0.009718776175862752
+            },
+            {
+              "rank": 25,
+              "feature": "week_of_year",
+              "mean_abs_shap": 0.013218897397912167,
+              "share": 0.008104866083574202
+            },
+            {
+              "rank": 26,
+              "feature": "price_n_changes",
+              "mean_abs_shap": 0.00941367229638385,
+              "share": 0.00577177891772532
+            },
+            {
+              "rank": 27,
+              "feature": "price_rel_dept",
+              "mean_abs_shap": 0.007140847369353505,
+              "share": 0.004378248042154737
+            },
+            {
+              "rank": 28,
+              "feature": "snap",
+              "mean_abs_shap": 0.005185270570635462,
+              "share": 0.0031792306360390174
+            },
+            {
+              "rank": 29,
+              "feature": "price_rel_item_max",
+              "mean_abs_shap": 0.00515875327102568,
+              "share": 0.0031629721573046827
+            },
+            {
+              "rank": 30,
+              "feature": "lag_29",
+              "mean_abs_shap": 0.005033458967157533,
+              "share": 0.003086150806528001
+            },
+            {
+              "rank": 31,
+              "feature": "price_item_std",
+              "mean_abs_shap": 0.0049312611765847895,
+              "share": 0.0030234905572124964
+            },
+            {
+              "rank": 32,
+              "feature": "is_weekend",
+              "mean_abs_shap": 0.004608744099946592,
+              "share": 0.0028257465520104223
+            },
+            {
+              "rank": 33,
+              "feature": "year",
+              "mean_abs_shap": 0.004242638269692687,
+              "share": 0.002601277094588633
+            },
+            {
+              "rank": 34,
+              "feature": "quarter",
+              "mean_abs_shap": 0.0038038232150357618,
+              "share": 0.002332227631052256
+            },
+            {
+              "rank": 35,
+              "feature": "cat_id",
+              "mean_abs_shap": 0.003702223240618251,
+              "share": 0.0022699339191063154
+            },
+            {
+              "rank": 36,
+              "feature": "month",
+              "mean_abs_shap": 0.0032103230659946036,
+              "share": 0.0019683365224549792
+            },
+            {
+              "rank": 37,
+              "feature": "days_since_release",
+              "mean_abs_shap": 0.0023263845509799755,
+              "share": 0.0014263697400031736
+            },
+            {
+              "rank": 38,
+              "feature": "roll_std_56",
+              "mean_abs_shap": 0.0021307393894740034,
+              "share": 0.0013064143620186528
+            },
+            {
+              "rank": 39,
+              "feature": "lag_33",
+              "mean_abs_shap": 0.0020352791789952484,
+              "share": 0.0012478851065935888
+            },
+            {
+              "rank": 40,
+              "feature": "lag_32",
+              "mean_abs_shap": 0.0017169590698026807,
+              "share": 0.0010527143764597756
+            },
+            {
+              "rank": 41,
+              "feature": "lag_56",
+              "mean_abs_shap": 0.0016794791825886482,
+              "share": 0.0010297344366392899
+            },
+            {
+              "rank": 42,
+              "feature": "lag_34",
+              "mean_abs_shap": 0.0015247480251778102,
+              "share": 0.0009348645490819998
+            },
+            {
+              "rank": 43,
+              "feature": "price_change_1w",
+              "mean_abs_shap": 0.0010904462840740322,
+              "share": 0.0006685823210298184
+            },
+            {
+              "rank": 44,
+              "feature": "lag_49",
+              "mean_abs_shap": 0.00040701391776402674,
+              "share": 0.0002495513202295784
+            },
+            {
+              "rank": 45,
+              "feature": "lag_42",
+              "mean_abs_shap": 0.00035891236593857693,
+              "share": 0.00022005894849674764
+            },
+            {
+              "rank": 46,
+              "feature": "event_type_1",
+              "mean_abs_shap": 5.0641780669474864e-05,
+              "share": 3.104985523411789e-05
+            },
+            {
+              "rank": 47,
+              "feature": "lag_35",
+              "mean_abs_shap": 2.8017060913298483e-05,
+              "share": 1.7178023243715486e-05
+            },
+            {
+              "rank": 48,
+              "feature": "lag_31",
+              "mean_abs_shap": 2.295125858046952e-05,
+              "share": 1.4072041838646004e-05
+            },
+            {
+              "rank": 49,
+              "feature": "lag_30",
+              "mean_abs_shap": 2.135330059518573e-06,
+              "share": 1.309229026874966e-06
+            },
+            {
+              "rank": 50,
+              "feature": "event_name_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 51,
+              "feature": "event_type_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 52,
+              "feature": "has_event",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            }
+          ],
+          "group_importance": [
+            {
+              "group": "rolling means",
+              "rank": 1,
+              "mean_abs_shap": 0.6001467156858487,
+              "share": 0.42712297574955777
+            },
+            {
+              "group": "product identity",
+              "rank": 2,
+              "mean_abs_shap": 0.2292720096646413,
+              "share": 0.16317233847082113
+            },
+            {
+              "group": "rolling std devs",
+              "rank": 3,
+              "mean_abs_shap": 0.18122879895372115,
+              "share": 0.12898010082779657
+            },
+            {
+              "group": "weekday",
+              "rank": 4,
+              "mean_abs_shap": 0.12470878463846574,
+              "share": 0.08875494242440328
+            },
+            {
+              "group": "zero-sales share",
+              "rank": 5,
+              "mean_abs_shap": 0.06316710863377953,
+              "share": 0.04495587946077913
+            },
+            {
+              "group": "same-weekday mean",
+              "rank": 6,
+              "mean_abs_shap": 0.059947964099401785,
+              "share": 0.04266482202939749
+            },
+            {
+              "group": "price",
+              "rank": 7,
+              "mean_abs_shap": 0.0571203631289941,
+              "share": 0.04065242521184152
+            },
+            {
+              "group": "sales lags",
+              "rank": 8,
+              "mean_abs_shap": 0.04139819980493342,
+              "share": 0.029462999345336357
+            },
+            {
+              "group": "other calendar",
+              "rank": 9,
+              "mean_abs_shap": 0.022798986501094503,
+              "share": 0.016225983920103458
+            },
+            {
+              "group": "events",
+              "rank": 10,
+              "mean_abs_shap": 0.017790569617061935,
+              "share": 0.012661505656054933
+            },
+            {
+              "group": "snap",
+              "rank": 11,
+              "mean_abs_shap": 0.005185270570635462,
+              "share": 0.0036903446079270936
+            },
+            {
+              "group": "days since release",
+              "rank": 12,
+              "mean_abs_shap": 0.0023263845509799755,
+              "share": 0.0016556822959812726
+            }
+          ]
+        },
+        {
+          "fold": 2,
+          "test_days": [
+            1886,
+            1913
+          ],
+          "params": {
+            "tweedie_variance_power": 1.3,
+            "num_leaves": 31
+          },
+          "rounds": 168,
+          "wrmsse_recorded": 0.47401997286005804,
+          "wrmsse_rebuilt": 0.47401997286005804,
+          "n_rows": 85372,
+          "base_value": -0.3152040251758656,
+          "max_additivity_error": 8.881784197001252e-15,
+          "importance": [
+            {
+              "rank": 1,
+              "feature": "roll_mean_28",
+              "mean_abs_shap": 0.2245474739065442,
+              "share": 0.14464282733694445
+            },
+            {
+              "rank": 2,
+              "feature": "roll_mean_14",
+              "mean_abs_shap": 0.21716421738229075,
+              "share": 0.13988688383848213
+            },
+            {
+              "rank": 3,
+              "feature": "item_id",
+              "mean_abs_shap": 0.1460338827978448,
+              "share": 0.0940680976160233
+            },
+            {
+              "rank": 4,
+              "feature": "roll_std_182",
+              "mean_abs_shap": 0.13866754538804926,
+              "share": 0.08932305260823942
+            },
+            {
+              "rank": 5,
+              "feature": "roll_mean_7",
+              "mean_abs_shap": 0.10644916839592199,
+              "share": 0.06856950299454664
+            },
+            {
+              "rank": 6,
+              "feature": "day_of_week",
+              "mean_abs_shap": 0.07446211924824707,
+              "share": 0.04796496380115045
+            },
+            {
+              "rank": 7,
+              "feature": "same_dow_mean_4",
+              "mean_abs_shap": 0.07258684044575084,
+              "share": 0.04675699818337207
+            },
+            {
+              "rank": 8,
+              "feature": "dept_id",
+              "mean_abs_shap": 0.06567695662369341,
+              "share": 0.04230597891691543
+            },
+            {
+              "rank": 9,
+              "feature": "wday",
+              "mean_abs_shap": 0.061798000172615726,
+              "share": 0.03980733923756517
+            },
+            {
+              "rank": 10,
+              "feature": "roll_mean_56",
+              "mean_abs_shap": 0.050157273794381646,
+              "share": 0.032308935687034496
+            },
+            {
+              "rank": 11,
+              "feature": "price_rel_item_mean",
+              "mean_abs_shap": 0.03447900220149467,
+              "share": 0.022209737101102058
+            },
+            {
+              "rank": 12,
+              "feature": "zero_frac_112",
+              "mean_abs_shap": 0.03306063767493506,
+              "share": 0.021296093978127567
+            },
+            {
+              "rank": 13,
+              "feature": "lag_364",
+              "mean_abs_shap": 0.0303788886060429,
+              "share": 0.019568638483819838
+            },
+            {
+              "rank": 14,
+              "feature": "roll_mean_182",
+              "mean_abs_shap": 0.028441108842175274,
+              "share": 0.01832041271255695
+            },
+            {
+              "rank": 15,
+              "feature": "lag_28",
+              "mean_abs_shap": 0.023379750717151763,
+              "share": 0.01506012598284335
+            },
+            {
+              "rank": 16,
+              "feature": "sell_price",
+              "mean_abs_shap": 0.023347604065805123,
+              "share": 0.015039418635486914
+            },
+            {
+              "rank": 17,
+              "feature": "roll_std_14",
+              "mean_abs_shap": 0.022770555595580288,
+              "share": 0.014667711393398246
+            },
+            {
+              "rank": 18,
+              "feature": "roll_std_112",
+              "mean_abs_shap": 0.022702782114252303,
+              "share": 0.014624054932752302
+            },
+            {
+              "rank": 19,
+              "feature": "zero_frac_28",
+              "mean_abs_shap": 0.021744328549068947,
+              "share": 0.014006664627141499
+            },
+            {
+              "rank": 20,
+              "feature": "roll_mean_112",
+              "mean_abs_shap": 0.016387783438165895,
+              "share": 0.010556232448504002
+            },
+            {
+              "rank": 21,
+              "feature": "event_name_1",
+              "mean_abs_shap": 0.016108011909105983,
+              "share": 0.010376016905360335
+            },
+            {
+              "rank": 22,
+              "feature": "day_of_month",
+              "mean_abs_shap": 0.015570417161883322,
+              "share": 0.010029723879449304
+            },
+            {
+              "rank": 23,
+              "feature": "roll_std_28",
+              "mean_abs_shap": 0.014126517894369769,
+              "share": 0.009099632488041241
+            },
+            {
+              "rank": 24,
+              "feature": "roll_std_7",
+              "mean_abs_shap": 0.0131787367711074,
+              "share": 0.008489116863081193
+            },
+            {
+              "rank": 25,
+              "feature": "week_of_year",
+              "mean_abs_shap": 0.011388926010749173,
+              "share": 0.007336205702370266
+            },
+            {
+              "rank": 26,
+              "feature": "is_weekend",
+              "mean_abs_shap": 0.009133944221099378,
+              "share": 0.00588365343814832
+            },
+            {
+              "rank": 27,
+              "feature": "lag_29",
+              "mean_abs_shap": 0.00899817617072306,
+              "share": 0.005796198102638162
+            },
+            {
+              "rank": 28,
+              "feature": "roll_std_56",
+              "mean_abs_shap": 0.008033235975625302,
+              "share": 0.00517462941784373
+            },
+            {
+              "rank": 29,
+              "feature": "snap",
+              "mean_abs_shap": 0.007959760713203446,
+              "share": 0.005127300140381253
+            },
+            {
+              "rank": 30,
+              "feature": "price_n_changes",
+              "mean_abs_shap": 0.007395550138264384,
+              "share": 0.004763862461244616
+            },
+            {
+              "rank": 31,
+              "feature": "price_rel_dept",
+              "mean_abs_shap": 0.006468801084977917,
+              "share": 0.004166894697737371
+            },
+            {
+              "rank": 32,
+              "feature": "price_rel_item_max",
+              "mean_abs_shap": 0.00524829781343858,
+              "share": 0.003380704406222829
+            },
+            {
+              "rank": 33,
+              "feature": "cat_id",
+              "mean_abs_shap": 0.00354864033978192,
+              "share": 0.0022858657148003346
+            },
+            {
+              "rank": 34,
+              "feature": "price_item_std",
+              "mean_abs_shap": 0.002836143750021225,
+              "share": 0.001826909221467392
+            },
+            {
+              "rank": 35,
+              "feature": "year",
+              "mean_abs_shap": 0.0021104554491191392,
+              "share": 0.0013594552537976989
+            },
+            {
+              "rank": 36,
+              "feature": "lag_56",
+              "mean_abs_shap": 0.0017449012679185514,
+              "share": 0.0011239825967519063
+            },
+            {
+              "rank": 37,
+              "feature": "month",
+              "mean_abs_shap": 0.001692143451136183,
+              "share": 0.0010899985146744465
+            },
+            {
+              "rank": 38,
+              "feature": "price_change_1w",
+              "mean_abs_shap": 0.0008174268161708149,
+              "share": 0.0005265475659779292
+            },
+            {
+              "rank": 39,
+              "feature": "days_since_release",
+              "mean_abs_shap": 0.0006611557062873674,
+              "share": 0.0004258851324560466
+            },
+            {
+              "rank": 40,
+              "feature": "lag_34",
+              "mean_abs_shap": 0.0005550255172500237,
+              "share": 0.00035752110082790724
+            },
+            {
+              "rank": 41,
+              "feature": "lag_32",
+              "mean_abs_shap": 0.00026738783702560617,
+              "share": 0.00017223855637311906
+            },
+            {
+              "rank": 42,
+              "feature": "event_type_1",
+              "mean_abs_shap": 0.00012820839885179503,
+              "share": 8.258576672291764e-05
+            },
+            {
+              "rank": 43,
+              "feature": "quarter",
+              "mean_abs_shap": 0.00011360414441971851,
+              "share": 7.317839902710992e-05
+            },
+            {
+              "rank": 44,
+              "feature": "lag_30",
+              "mean_abs_shap": 3.727116539607505e-05,
+              "share": 2.4008316135744635e-05
+            },
+            {
+              "rank": 45,
+              "feature": "lag_49",
+              "mean_abs_shap": 3.1634555558814944e-05,
+              "share": 2.0377479550177615e-05
+            },
+            {
+              "rank": 46,
+              "feature": "lag_42",
+              "mean_abs_shap": 2.6220937646107675e-05,
+              "share": 1.689028378086869e-05
+            },
+            {
+              "rank": 47,
+              "feature": "lag_31",
+              "mean_abs_shap": 1.078483529861626e-05,
+              "share": 6.947079131268162e-06
+            },
+            {
+              "rank": 48,
+              "feature": "event_name_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 49,
+              "feature": "event_type_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 50,
+              "feature": "has_event",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 51,
+              "feature": "lag_33",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 52,
+              "feature": "lag_35",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            }
+          ],
+          "group_importance": [
+            {
+              "group": "rolling means",
+              "rank": 1,
+              "mean_abs_shap": 0.5959501972504297,
+              "share": 0.44050868894938316
+            },
+            {
+              "group": "rolling std devs",
+              "rank": 2,
+              "mean_abs_shap": 0.18660467636300804,
+              "share": 0.13793263550502724
+            },
+            {
+              "group": "product identity",
+              "rank": 3,
+              "mean_abs_shap": 0.1785205959884057,
+              "share": 0.1319571233504754
+            },
+            {
+              "group": "weekday",
+              "rank": 4,
+              "mean_abs_shap": 0.12278337794362316,
+              "share": 0.09075782689940715
+            },
+            {
+              "group": "same-weekday mean",
+              "rank": 5,
+              "mean_abs_shap": 0.07258684044575084,
+              "share": 0.05365403697701805
+            },
+            {
+              "group": "price",
+              "rank": 6,
+              "mean_abs_shap": 0.05544550349540072,
+              "share": 0.04098366971868604
+            },
+            {
+              "group": "zero-sales share",
+              "rank": 7,
+              "mean_abs_shap": 0.05028145711938997,
+              "share": 0.0371665599849101
+            },
+            {
+              "group": "sales lags",
+              "rank": 8,
+              "mean_abs_shap": 0.047816968989865274,
+              "share": 0.035344883543024404
+            },
+            {
+              "group": "other calendar",
+              "rank": 9,
+              "mean_abs_shap": 0.018021446010651004,
+              "share": 0.013320917740695052
+            },
+            {
+              "group": "events",
+              "rank": 10,
+              "mean_abs_shap": 0.01623622030795758,
+              "share": 0.01200133191389188
+            },
+            {
+              "group": "snap",
+              "rank": 11,
+              "mean_abs_shap": 0.007959760713203446,
+              "share": 0.005883618752542545
+            },
+            {
+              "group": "days since release",
+              "rank": 12,
+              "mean_abs_shap": 0.0006611557062873674,
+              "share": 0.0004887066649390922
+            }
+          ]
+        },
+        {
+          "fold": 3,
+          "test_days": [
+            1914,
+            1941
+          ],
+          "params": {
+            "tweedie_variance_power": 1.1,
+            "num_leaves": 31
+          },
+          "rounds": 479,
+          "wrmsse_recorded": 0.5291747329897111,
+          "wrmsse_rebuilt": 0.5291747329897111,
+          "n_rows": 85372,
+          "base_value": -0.34669756844973887,
+          "max_additivity_error": 1.865174681370263e-14,
+          "importance": [
+            {
+              "rank": 1,
+              "feature": "roll_mean_14",
+              "mean_abs_shap": 0.2613559656204161,
+              "share": 0.15213232029875806
+            },
+            {
+              "rank": 2,
+              "feature": "item_id",
+              "mean_abs_shap": 0.25567194438512936,
+              "share": 0.14882371650584722
+            },
+            {
+              "rank": 3,
+              "feature": "roll_mean_28",
+              "mean_abs_shap": 0.1961162343695576,
+              "share": 0.11415701842531503
+            },
+            {
+              "rank": 4,
+              "feature": "roll_std_182",
+              "mean_abs_shap": 0.1255283766071926,
+              "share": 0.07306863323840954
+            },
+            {
+              "rank": 5,
+              "feature": "day_of_week",
+              "mean_abs_shap": 0.08375812303595953,
+              "share": 0.04875464606702669
+            },
+            {
+              "rank": 6,
+              "feature": "dept_id",
+              "mean_abs_shap": 0.07602460692365896,
+              "share": 0.04425305473185568
+            },
+            {
+              "rank": 7,
+              "feature": "roll_mean_7",
+              "mean_abs_shap": 0.06258510550605428,
+              "share": 0.03643007456966522
+            },
+            {
+              "rank": 8,
+              "feature": "wday",
+              "mean_abs_shap": 0.05996859059275611,
+              "share": 0.03490703114530169
+            },
+            {
+              "rank": 9,
+              "feature": "same_dow_mean_4",
+              "mean_abs_shap": 0.05726838967908586,
+              "share": 0.033335275056649426
+            },
+            {
+              "rank": 10,
+              "feature": "zero_frac_112",
+              "mean_abs_shap": 0.048834241352449924,
+              "share": 0.028425853717713737
+            },
+            {
+              "rank": 11,
+              "feature": "roll_std_14",
+              "mean_abs_shap": 0.04272538726076322,
+              "share": 0.02486995957491609
+            },
+            {
+              "rank": 12,
+              "feature": "price_rel_item_mean",
+              "mean_abs_shap": 0.03935353293062759,
+              "share": 0.02290724170951269
+            },
+            {
+              "rank": 13,
+              "feature": "roll_mean_56",
+              "mean_abs_shap": 0.03736787316035505,
+              "share": 0.021751411853253754
+            },
+            {
+              "rank": 14,
+              "feature": "roll_mean_182",
+              "mean_abs_shap": 0.03381219965454981,
+              "share": 0.019681694946739357
+            },
+            {
+              "rank": 15,
+              "feature": "zero_frac_28",
+              "mean_abs_shap": 0.03134814682825617,
+              "share": 0.01824739796058523
+            },
+            {
+              "rank": 16,
+              "feature": "lag_364",
+              "mean_abs_shap": 0.02950251775890263,
+              "share": 0.017173078374785586
+            },
+            {
+              "rank": 17,
+              "feature": "roll_mean_112",
+              "mean_abs_shap": 0.025478418167531193,
+              "share": 0.014830695997955699
+            },
+            {
+              "rank": 18,
+              "feature": "sell_price",
+              "mean_abs_shap": 0.02402561036442246,
+              "share": 0.013985033181304814
+            },
+            {
+              "rank": 19,
+              "feature": "roll_std_7",
+              "mean_abs_shap": 0.023085158627462025,
+              "share": 0.013437606974548232
+            },
+            {
+              "rank": 20,
+              "feature": "event_name_1",
+              "mean_abs_shap": 0.02257989267548303,
+              "share": 0.013143497439072142
+            },
+            {
+              "rank": 21,
+              "feature": "day_of_month",
+              "mean_abs_shap": 0.020940591432097363,
+              "share": 0.012189278922449082
+            },
+            {
+              "rank": 22,
+              "feature": "lag_28",
+              "mean_abs_shap": 0.020682664060642373,
+              "share": 0.012039142347625317
+            },
+            {
+              "rank": 23,
+              "feature": "roll_std_28",
+              "mean_abs_shap": 0.019352293138339704,
+              "share": 0.011264748639842686
+            },
+            {
+              "rank": 24,
+              "feature": "roll_std_112",
+              "mean_abs_shap": 0.01853675630209148,
+              "share": 0.010790033969018049
+            },
+            {
+              "rank": 25,
+              "feature": "week_of_year",
+              "mean_abs_shap": 0.017590869328595778,
+              "share": 0.010239443973198837
+            },
+            {
+              "rank": 26,
+              "feature": "price_rel_item_max",
+              "mean_abs_shap": 0.010054490123366277,
+              "share": 0.005852603778366445
+            },
+            {
+              "rank": 27,
+              "feature": "price_n_changes",
+              "mean_abs_shap": 0.008032035875190455,
+              "share": 0.004675356277079513
+            },
+            {
+              "rank": 28,
+              "feature": "price_rel_dept",
+              "mean_abs_shap": 0.0076146160479174845,
+              "share": 0.004432380966716889
+            },
+            {
+              "rank": 29,
+              "feature": "days_since_release",
+              "mean_abs_shap": 0.0068739898255048264,
+              "share": 0.00400127090798043
+            },
+            {
+              "rank": 30,
+              "feature": "is_weekend",
+              "mean_abs_shap": 0.006562824670289265,
+              "share": 0.003820145227735507
+            },
+            {
+              "rank": 31,
+              "feature": "lag_29",
+              "mean_abs_shap": 0.006231929332430569,
+              "share": 0.003627534833689263
+            },
+            {
+              "rank": 32,
+              "feature": "month",
+              "mean_abs_shap": 0.006220493321947499,
+              "share": 0.0036208780627002388
+            },
+            {
+              "rank": 33,
+              "feature": "snap",
+              "mean_abs_shap": 0.0057603245247828975,
+              "share": 0.0033530190655828196
+            },
+            {
+              "rank": 34,
+              "feature": "cat_id",
+              "mean_abs_shap": 0.004876539252002373,
+              "share": 0.002838577759929802
+            },
+            {
+              "rank": 35,
+              "feature": "price_item_std",
+              "mean_abs_shap": 0.00483928650844165,
+              "share": 0.002816893363700567
+            },
+            {
+              "rank": 36,
+              "feature": "year",
+              "mean_abs_shap": 0.003073691298414573,
+              "share": 0.001789160572630846
+            },
+            {
+              "rank": 37,
+              "feature": "lag_56",
+              "mean_abs_shap": 0.003027395454100649,
+              "share": 0.0017622122908154754
+            },
+            {
+              "rank": 38,
+              "feature": "lag_32",
+              "mean_abs_shap": 0.0028559846946110195,
+              "share": 0.001662436046935115
+            },
+            {
+              "rank": 39,
+              "feature": "roll_std_56",
+              "mean_abs_shap": 0.0023369945651126596,
+              "share": 0.0013603378245918376
+            },
+            {
+              "rank": 40,
+              "feature": "lag_33",
+              "mean_abs_shap": 0.002267062295850552,
+              "share": 0.0013196310499775802
+            },
+            {
+              "rank": 41,
+              "feature": "lag_34",
+              "mean_abs_shap": 0.0018180353111211774,
+              "share": 0.001058257574528208
+            },
+            {
+              "rank": 42,
+              "feature": "price_change_1w",
+              "mean_abs_shap": 0.0007996363100359756,
+              "share": 0.0004654591562589042
+            },
+            {
+              "rank": 43,
+              "feature": "quarter",
+              "mean_abs_shap": 0.0004993947582154003,
+              "share": 0.0002906919806938255
+            },
+            {
+              "rank": 44,
+              "feature": "lag_49",
+              "mean_abs_shap": 0.0003990101385202024,
+              "share": 0.0002322592409616895
+            },
+            {
+              "rank": 45,
+              "feature": "lag_42",
+              "mean_abs_shap": 0.00011098964643107184,
+              "share": 6.460580458003035e-05
+            },
+            {
+              "rank": 46,
+              "feature": "lag_31",
+              "mean_abs_shap": 0.00010077280445731873,
+              "share": 5.8658697645229285e-05
+            },
+            {
+              "rank": 47,
+              "feature": "lag_30",
+              "mean_abs_shap": 6.0582549921532245e-05,
+              "share": 3.526440985305017e-05
+            },
+            {
+              "rank": 48,
+              "feature": "event_name_2",
+              "mean_abs_shap": 2.959426924223898e-05,
+              "share": 1.7226485864519662e-05
+            },
+            {
+              "rank": 49,
+              "feature": "lag_35",
+              "mean_abs_shap": 1.2453430982001952e-05,
+              "share": 7.248999832374218e-06
+            },
+            {
+              "rank": 50,
+              "feature": "event_type_1",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 51,
+              "feature": "event_type_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 52,
+              "feature": "has_event",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            }
+          ],
+          "group_importance": [
+            {
+              "group": "rolling means",
+              "rank": 1,
+              "mean_abs_shap": 0.5475359400872201,
+              "share": 0.3776937674443265
+            },
+            {
+              "group": "product identity",
+              "rank": 2,
+              "mean_abs_shap": 0.29484648882297454,
+              "share": 0.20338697979084502
+            },
+            {
+              "group": "rolling std devs",
+              "rank": 3,
+              "mean_abs_shap": 0.17604762549774577,
+              "share": 0.12143876968748311
+            },
+            {
+              "group": "weekday",
+              "rank": 4,
+              "mean_abs_shap": 0.12822168717055596,
+              "share": 0.08844813381163745
+            },
+            {
+              "group": "zero-sales share",
+              "rank": 5,
+              "mean_abs_shap": 0.07409204639589272,
+              "share": 0.051109163969157545
+            },
+            {
+              "group": "price",
+              "rank": 6,
+              "mean_abs_shap": 0.06417115242801322,
+              "share": 0.0442656683284016
+            },
+            {
+              "group": "same-weekday mean",
+              "rank": 7,
+              "mean_abs_shap": 0.05726838967908586,
+              "share": 0.039504098762755506
+            },
+            {
+              "group": "sales lags",
+              "rank": 8,
+              "mean_abs_shap": 0.04208346527679889,
+              "share": 0.02902944151022254
+            },
+            {
+              "group": "other calendar",
+              "rank": 9,
+              "mean_abs_shap": 0.030177788639882207,
+              "share": 0.020816830184188572
+            },
+            {
+              "group": "events",
+              "rank": 10,
+              "mean_abs_shap": 0.02260332381828578,
+              "share": 0.015591916264588052
+            },
+            {
+              "group": "days since release",
+              "rank": 11,
+              "mean_abs_shap": 0.0068739898255048264,
+              "share": 0.004741721820407466
+            },
+            {
+              "group": "snap",
+              "rank": 12,
+              "mean_abs_shap": 0.0057603245247828975,
+              "share": 0.003973508425986854
+            }
+          ]
+        }
+      ],
+      "latest_fold": {
+        "fold": 3,
+        "series": [
+          {
+            "id": "FOODS_3_090_CA_1_evaluation",
+            "why_chosen": "most units sold in the last 28 training days",
+            "n_days": 28,
+            "units_last_28_training_days": 1423.0,
+            "actual_units": 1652.0,
+            "forecast_units": 1242.9569927831965,
+            "days_since_release_at_start": 1913,
+            "zero_frac_112_at_start": 0.2678571343421936,
+            "mean_base_value": -0.346697568449739,
+            "top_features": [
+              {
+                "feature": "item_id",
+                "mean_shap": 1.4150570060912127
+              },
+              {
+                "feature": "roll_mean_14",
+                "mean_shap": 0.798105829551923
+              },
+              {
+                "feature": "roll_mean_28",
+                "mean_shap": 0.6565386930026358
+              },
+              {
+                "feature": "roll_std_182",
+                "mean_shap": 0.3118576578002273
+              },
+              {
+                "feature": "same_dow_mean_4",
+                "mean_shap": 0.30239762978979023
+              }
+            ]
+          },
+          {
+            "id": "FOODS_3_566_CA_1_evaluation",
+            "why_chosen": "largest total absolute error over the 28 test days",
+            "n_days": 28,
+            "units_last_28_training_days": 160.0,
+            "actual_units": 750.0,
+            "forecast_units": 167.31055566657938,
+            "days_since_release_at_start": 1122,
+            "zero_frac_112_at_start": 0.0625,
+            "mean_base_value": -0.346697568449739,
+            "top_features": [
+              {
+                "feature": "roll_mean_14",
+                "mean_shap": 0.5760222630312597
+              },
+              {
+                "feature": "item_id",
+                "mean_shap": 0.4735468211362533
+              },
+              {
+                "feature": "roll_mean_28",
+                "mean_shap": 0.4099120671562541
+              },
+              {
+                "feature": "roll_std_182",
+                "mean_shap": 0.19743340402712242
+              },
+              {
+                "feature": "roll_mean_56",
+                "mean_shap": 0.11074372149716567
+              }
+            ]
+          },
+          {
+            "id": "FOODS_3_595_CA_1_evaluation",
+            "why_chosen": "most recently released item",
+            "n_days": 28,
+            "units_last_28_training_days": 38.0,
+            "actual_units": 44.0,
+            "forecast_units": 38.135302668836864,
+            "days_since_release_at_start": 72,
+            "zero_frac_112_at_start": null,
+            "mean_base_value": -0.346697568449739,
+            "top_features": [
+              {
+                "feature": "roll_mean_28",
+                "mean_shap": 0.19008991302344488
+              },
+              {
+                "feature": "roll_mean_14",
+                "mean_shap": 0.12054510299751119
+              },
+              {
+                "feature": "item_id",
+                "mean_shap": 0.10864940042520972
+              },
+              {
+                "feature": "dept_id",
+                "mean_shap": 0.07096635621171134
+              },
+              {
+                "feature": "roll_std_182",
+                "mean_shap": 0.04066325890886125
+              }
+            ]
+          }
+        ],
+        "segments": [
+          {
+            "segment": "all rows",
+            "n_rows": 85372,
+            "share_of_rows": 1.0,
+            "actual_units_per_row": 1.5699761045776133,
+            "forecast_units_per_row": 1.485001569050749,
+            "bias": -0.05412473175808352,
+            "mae": 1.1435625351612912,
+            "mae_over_mean_actual": 0.7283948665377653,
+            "top_features": [
+              "roll_mean_14",
+              "item_id",
+              "roll_mean_28"
+            ]
+          },
+          {
+            "segment": "new item (< 182 days on sale)",
+            "n_rows": 112,
+            "share_of_rows": 0.0013119055428009183,
+            "actual_units_per_row": 0.9196428571428571,
+            "forecast_units_per_row": 0.8807849747621257,
+            "bias": -0.04225323132662062,
+            "mae": 0.8868789199099593,
+            "mae_over_mean_actual": 0.9643731944651984,
+            "top_features": [
+              "roll_mean_14",
+              "roll_mean_28",
+              "item_id"
+            ]
+          },
+          {
+            "segment": "regular seller (< 25% zero days)",
+            "n_rows": 13956,
+            "share_of_rows": 0.16347280138687156,
+            "actual_units_per_row": 4.875179134422471,
+            "forecast_units_per_row": 4.8380528535400735,
+            "bias": -0.007615367529832384,
+            "mae": 2.506882356236488,
+            "mae_over_mean_actual": 0.5142133831628858,
+            "top_features": [
+              "roll_mean_14",
+              "item_id",
+              "roll_mean_28"
+            ]
+          },
+          {
+            "segment": "intermittent (25-75% zero days)",
+            "n_rows": 45097,
+            "share_of_rows": 0.5282411094972591,
+            "actual_units_per_row": 1.1585914805862918,
+            "forecast_units_per_row": 1.0841261034033467,
+            "bias": -0.06427233276846023,
+            "mae": 1.0547784851085202,
+            "mae_over_mean_actual": 0.9103972390464685,
+            "top_features": [
+              "item_id",
+              "roll_mean_14",
+              "roll_mean_28"
+            ]
+          },
+          {
+            "segment": "mostly zero (>= 75% zero days)",
+            "n_rows": 26227,
+            "share_of_rows": 0.30720845241999717,
+            "actual_units_per_row": 0.5206085331909864,
+            "forecast_units_per_row": 0.3922027427585201,
+            "bias": -0.24664557387375818,
+            "mae": 0.5713748963670733,
+            "mae_over_mean_actual": 1.09751350571402,
+            "top_features": [
+              "item_id",
+              "roll_mean_14",
+              "roll_mean_28"
+            ]
+          },
+          {
+            "segment": "price changed vs last week",
+            "n_rows": 460,
+            "share_of_rows": 0.005388183479360914,
+            "actual_units_per_row": 1.141304347826087,
+            "forecast_units_per_row": 1.0330911757542847,
+            "bias": -0.09481535076767444,
+            "mae": 0.9430640478833713,
+            "mae_over_mean_actual": 0.8263037371930492,
+            "top_features": [
+              "item_id",
+              "roll_mean_14",
+              "roll_mean_28"
+            ]
+          }
+        ],
+        "snap_feature": {
+          "n_snap_rows": 30490,
+          "FOODS": {
+            "mean_snap_shap": 0.010377385422471509,
+            "implied_multiplier": 1.010431417227789
+          },
+          "non-food": {
+            "mean_snap_shap": 0.005740307990995549,
+            "implied_multiplier": 1.0057568151291487
+          }
+        }
+      }
+    },
+    "xgboost": {
+      "mean_importance": [
+        {
+          "rank": 1,
+          "feature": "roll_mean_14",
+          "mean_abs_shap": 0.3475477419465514,
+          "share": 0.19173532995837278
+        },
+        {
+          "rank": 2,
+          "feature": "item_id",
+          "mean_abs_shap": 0.27955665181810013,
+          "share": 0.15422596785751674
+        },
+        {
+          "rank": 3,
+          "feature": "roll_mean_28",
+          "mean_abs_shap": 0.20175387204159617,
+          "share": 0.11130368740023
+        },
+        {
+          "rank": 4,
+          "feature": "roll_mean_7",
+          "mean_abs_shap": 0.14875338231583904,
+          "share": 0.0820643479972245
+        },
+        {
+          "rank": 5,
+          "feature": "roll_std_182",
+          "mean_abs_shap": 0.09360650488419935,
+          "share": 0.05164088824085103
+        },
+        {
+          "rank": 6,
+          "feature": "same_dow_mean_4",
+          "mean_abs_shap": 0.08191151356619568,
+          "share": 0.04518898898045364
+        },
+        {
+          "rank": 7,
+          "feature": "day_of_week",
+          "mean_abs_shap": 0.07324229149192064,
+          "share": 0.040406347765224115
+        },
+        {
+          "rank": 8,
+          "feature": "wday",
+          "mean_abs_shap": 0.06768200106761428,
+          "share": 0.037338843677303106
+        },
+        {
+          "rank": 9,
+          "feature": "dept_id",
+          "mean_abs_shap": 0.05835079172417599,
+          "share": 0.032190996960319004
+        },
+        {
+          "rank": 10,
+          "feature": "roll_mean_56",
+          "mean_abs_shap": 0.05124221668933455,
+          "share": 0.0282693343645402
+        },
+        {
+          "rank": 11,
+          "feature": "zero_frac_112",
+          "mean_abs_shap": 0.04511189778820104,
+          "share": 0.02488735665213819
+        },
+        {
+          "rank": 12,
+          "feature": "zero_frac_28",
+          "mean_abs_shap": 0.04176168057887229,
+          "share": 0.02303910697436686
+        },
+        {
+          "rank": 13,
+          "feature": "price_rel_item_mean",
+          "mean_abs_shap": 0.03525019459443758,
+          "share": 0.019446846795226035
+        },
+        {
+          "rank": 14,
+          "feature": "lag_28",
+          "mean_abs_shap": 0.029401629030193364,
+          "share": 0.01622030691911314
+        },
+        {
+          "rank": 15,
+          "feature": "lag_364",
+          "mean_abs_shap": 0.028706944951322245,
+          "share": 0.015837063223345823
+        },
+        {
+          "rank": 16,
+          "feature": "sell_price",
+          "mean_abs_shap": 0.026555371736477932,
+          "share": 0.014650082125533904
+        },
+        {
+          "rank": 17,
+          "feature": "roll_mean_182",
+          "mean_abs_shap": 0.025910874909477546,
+          "share": 0.014294525760558162
+        },
+        {
+          "rank": 18,
+          "feature": "day_of_month",
+          "mean_abs_shap": 0.024980017678970724,
+          "share": 0.013780989930241041
+        },
+        {
+          "rank": 19,
+          "feature": "roll_mean_112",
+          "mean_abs_shap": 0.020387332300969202,
+          "share": 0.01124729472792395
+        },
+        {
+          "rank": 20,
+          "feature": "roll_std_14",
+          "mean_abs_shap": 0.01371421040019437,
+          "share": 0.007565863157310341
+        },
+        {
+          "rank": 21,
+          "feature": "roll_std_7",
+          "mean_abs_shap": 0.012578257861645388,
+          "share": 0.006939180234337314
+        },
+        {
+          "rank": 22,
+          "feature": "roll_std_28",
+          "mean_abs_shap": 0.012377304557284882,
+          "share": 0.006828318204556921
+        },
+        {
+          "rank": 23,
+          "feature": "week_of_year",
+          "mean_abs_shap": 0.01175349268646467,
+          "share": 0.006484173327614929
+        },
+        {
+          "rank": 24,
+          "feature": "lag_29",
+          "mean_abs_shap": 0.0113611588978321,
+          "share": 0.0062677304067201844
+        },
+        {
+          "rank": 25,
+          "feature": "event_name_1",
+          "mean_abs_shap": 0.008996128150227677,
+          "share": 0.004962988939507983
+        },
+        {
+          "rank": 26,
+          "feature": "roll_std_112",
+          "mean_abs_shap": 0.006864095947441067,
+          "share": 0.003786788238005416
+        },
+        {
+          "rank": 27,
+          "feature": "days_since_release",
+          "mean_abs_shap": 0.005974232787121166,
+          "share": 0.0032958680389382745
+        },
+        {
+          "rank": 28,
+          "feature": "lag_56",
+          "mean_abs_shap": 0.005809124493923971,
+          "share": 0.0032047810046858796
+        },
+        {
+          "rank": 29,
+          "feature": "roll_std_56",
+          "mean_abs_shap": 0.005666590501398092,
+          "share": 0.00312614777307813
+        },
+        {
+          "rank": 30,
+          "feature": "price_rel_item_max",
+          "mean_abs_shap": 0.00485809322661134,
+          "share": 0.002680115550617243
+        },
+        {
+          "rank": 31,
+          "feature": "price_n_changes",
+          "mean_abs_shap": 0.00338857531564212,
+          "share": 0.0018694110990177472
+        },
+        {
+          "rank": 32,
+          "feature": "month",
+          "mean_abs_shap": 0.0031206634988770504,
+          "share": 0.001721609360184705
+        },
+        {
+          "rank": 33,
+          "feature": "price_rel_dept",
+          "mean_abs_shap": 0.0030845841135022306,
+          "share": 0.0017017050649624382
+        },
+        {
+          "rank": 34,
+          "feature": "year",
+          "mean_abs_shap": 0.0030611990243872085,
+          "share": 0.0016888039661019994
+        },
+        {
+          "rank": 35,
+          "feature": "lag_32",
+          "mean_abs_shap": 0.002924186005893194,
+          "share": 0.0016132165484931042
+        },
+        {
+          "rank": 36,
+          "feature": "snap",
+          "mean_abs_shap": 0.0026580532326626652,
+          "share": 0.0014663962733783848
+        },
+        {
+          "rank": 37,
+          "feature": "cat_id",
+          "mean_abs_shap": 0.00233104946068388,
+          "share": 0.001285994652102344
+        },
+        {
+          "rank": 38,
+          "feature": "lag_33",
+          "mean_abs_shap": 0.002182685850950988,
+          "share": 0.001204145334058649
+        },
+        {
+          "rank": 39,
+          "feature": "price_item_std",
+          "mean_abs_shap": 0.0021780777089865666,
+          "share": 0.0012016031117582113
+        },
+        {
+          "rank": 40,
+          "feature": "lag_34",
+          "mean_abs_shap": 0.0015982581113501671,
+          "share": 0.0008817279163491073
+        },
+        {
+          "rank": 41,
+          "feature": "quarter",
+          "mean_abs_shap": 0.0010122420573636945,
+          "share": 0.0005584342564832937
+        },
+        {
+          "rank": 42,
+          "feature": "price_change_1w",
+          "mean_abs_shap": 0.000945189306516557,
+          "share": 0.0005214425579146705
+        },
+        {
+          "rank": 43,
+          "feature": "lag_49",
+          "mean_abs_shap": 0.0006649918222634165,
+          "share": 0.00036686305526595554
+        },
+        {
+          "rank": 44,
+          "feature": "is_weekend",
+          "mean_abs_shap": 0.0004673595273259287,
+          "share": 0.0002578331617956732
+        },
+        {
+          "rank": 45,
+          "feature": "event_type_1",
+          "mean_abs_shap": 0.00036656730631060155,
+          "share": 0.00020222805371649888
+        },
+        {
+          "rank": 46,
+          "feature": "lag_35",
+          "mean_abs_shap": 0.00029062619597510707,
+          "share": 0.00016033282008318567
+        },
+        {
+          "rank": 47,
+          "feature": "lag_30",
+          "mean_abs_shap": 0.0002473704899185169,
+          "share": 0.00013646948830927887
+        },
+        {
+          "rank": 48,
+          "feature": "lag_42",
+          "mean_abs_shap": 0.00024169684004247364,
+          "share": 0.00013333944601650306
+        },
+        {
+          "rank": 49,
+          "feature": "lag_31",
+          "mean_abs_shap": 0.0001879725831213895,
+          "share": 0.00010370081832800379
+        },
+        {
+          "rank": 50,
+          "feature": "has_event",
+          "mean_abs_shap": 1.940204282661961e-05,
+          "share": 1.0703729687302903e-05
+        },
+        {
+          "rank": 51,
+          "feature": "event_name_2",
+          "mean_abs_shap": 6.298677403181592e-06,
+          "share": 3.4748578236658356e-06
+        },
+        {
+          "rank": 52,
+          "feature": "event_type_2",
+          "mean_abs_shap": 5.496701191585366e-07,
+          "share": 3.0324231449424286e-07
+        }
+      ],
+      "mean_group_importance": [
+        {
+          "group": "rolling means",
+          "rank": 1,
+          "mean_abs_shap": 0.7373808310733823,
+          "share": 0.45879472805180677
+        },
+        {
+          "group": "product identity",
+          "rank": 2,
+          "mean_abs_shap": 0.3160356505702442,
+          "share": 0.19663582812016633
+        },
+        {
+          "group": "weekday",
+          "rank": 3,
+          "mean_abs_shap": 0.12212918506787011,
+          "share": 0.07598817854925505
+        },
+        {
+          "group": "rolling std devs",
+          "rank": 4,
+          "mean_abs_shap": 0.10887749511872236,
+          "share": 0.06774304220960282
+        },
+        {
+          "group": "same-weekday mean",
+          "rank": 5,
+          "mean_abs_shap": 0.08191151356619568,
+          "share": 0.050964941055234324
+        },
+        {
+          "group": "zero-sales share",
+          "rank": 6,
+          "mean_abs_shap": 0.08182967326813764,
+          "share": 0.05091402042411816
+        },
+        {
+          "group": "sales lags",
+          "rank": 7,
+          "mean_abs_shap": 0.06046663435905812,
+          "share": 0.037622042637844647
+        },
+        {
+          "group": "price",
+          "rank": 8,
+          "mean_abs_shap": 0.053761001154958424,
+          "share": 0.033449830623854926
+        },
+        {
+          "group": "other calendar",
+          "rank": 9,
+          "mean_abs_shap": 0.02685866163038837,
+          "share": 0.01671132722641011
+        },
+        {
+          "group": "events",
+          "rank": 10,
+          "mean_abs_shap": 0.009330024180025006,
+          "share": 0.005805095177427203
+        },
+        {
+          "group": "days since release",
+          "rank": 11,
+          "mean_abs_shap": 0.005974232787121166,
+          "share": 0.0037171382701873777
+        },
+        {
+          "group": "snap",
+          "rank": 12,
+          "mean_abs_shap": 0.0026580532326626652,
+          "share": 0.0016538276540922607
+        }
+      ],
+      "folds": [
+        {
+          "fold": 1,
+          "test_days": [
+            1858,
+            1885
+          ],
+          "params": {
+            "tweedie_variance_power": 1.3,
+            "max_depth": 6
+          },
+          "rounds": 319,
+          "wrmsse_recorded": 0.5778385417569678,
+          "wrmsse_rebuilt": 0.5778385417569678,
+          "n_rows": 85372,
+          "base_value": 0.491172730922699,
+          "max_additivity_error": 5.3606432648400926e-06,
+          "importance": [
+            {
+              "rank": 1,
+              "feature": "roll_mean_14",
+              "mean_abs_shap": 0.30291718724019323,
+              "share": 0.16472903387158314
+            },
+            {
+              "rank": 2,
+              "feature": "item_id",
+              "mean_abs_shap": 0.2709494920283927,
+              "share": 0.14734471971193283
+            },
+            {
+              "rank": 3,
+              "feature": "roll_mean_28",
+              "mean_abs_shap": 0.2467930593951433,
+              "share": 0.13420823892748707
+            },
+            {
+              "rank": 4,
+              "feature": "roll_mean_7",
+              "mean_abs_shap": 0.16542183338164812,
+              "share": 0.08995784967664323
+            },
+            {
+              "rank": 5,
+              "feature": "roll_std_182",
+              "mean_abs_shap": 0.09959548247627222,
+              "share": 0.05416090039579507
+            },
+            {
+              "rank": 6,
+              "feature": "same_dow_mean_4",
+              "mean_abs_shap": 0.0904863178163162,
+              "share": 0.04920725643956128
+            },
+            {
+              "rank": 7,
+              "feature": "day_of_week",
+              "mean_abs_shap": 0.07726109805242427,
+              "share": 0.04201526547234747
+            },
+            {
+              "rank": 8,
+              "feature": "wday",
+              "mean_abs_shap": 0.06933916453124775,
+              "share": 0.037707248263988934
+            },
+            {
+              "rank": 9,
+              "feature": "roll_mean_56",
+              "mean_abs_shap": 0.058384499934144504,
+              "share": 0.03175000519069589
+            },
+            {
+              "rank": 10,
+              "feature": "dept_id",
+              "mean_abs_shap": 0.05615823835073361,
+              "share": 0.030539344537459646
+            },
+            {
+              "rank": 11,
+              "feature": "zero_frac_112",
+              "mean_abs_shap": 0.04549979219183026,
+              "share": 0.024743187659321736
+            },
+            {
+              "rank": 12,
+              "feature": "zero_frac_28",
+              "mean_abs_shap": 0.037641522893071905,
+              "share": 0.020469791615733274
+            },
+            {
+              "rank": 13,
+              "feature": "price_rel_item_mean",
+              "mean_abs_shap": 0.036208860614539914,
+              "share": 0.019690697252825094
+            },
+            {
+              "rank": 14,
+              "feature": "lag_28",
+              "mean_abs_shap": 0.03239840231024004,
+              "share": 0.017618536472533846
+            },
+            {
+              "rank": 15,
+              "feature": "lag_364",
+              "mean_abs_shap": 0.029487909667057898,
+              "share": 0.01603578494374199
+            },
+            {
+              "rank": 16,
+              "feature": "sell_price",
+              "mean_abs_shap": 0.02653583017312924,
+              "share": 0.014430418119305642
+            },
+            {
+              "rank": 17,
+              "feature": "day_of_month",
+              "mean_abs_shap": 0.025740546453408078,
+              "share": 0.013997935829353615
+            },
+            {
+              "rank": 18,
+              "feature": "roll_mean_182",
+              "mean_abs_shap": 0.02536572882460967,
+              "share": 0.013794106702216497
+            },
+            {
+              "rank": 19,
+              "feature": "roll_std_7",
+              "mean_abs_shap": 0.014511396135108233,
+              "share": 0.00789142500378738
+            },
+            {
+              "rank": 20,
+              "feature": "roll_std_28",
+              "mean_abs_shap": 0.01443502976314441,
+              "share": 0.00784989629824086
+            },
+            {
+              "rank": 21,
+              "feature": "roll_mean_112",
+              "mean_abs_shap": 0.013522405814722749,
+              "share": 0.0073536033586383154
+            },
+            {
+              "rank": 22,
+              "feature": "roll_std_14",
+              "mean_abs_shap": 0.0114771363639176,
+              "share": 0.006241367820906862
+            },
+            {
+              "rank": 23,
+              "feature": "week_of_year",
+              "mean_abs_shap": 0.011424969516347985,
+              "share": 0.006212999029823856
+            },
+            {
+              "rank": 24,
+              "feature": "event_name_1",
+              "mean_abs_shap": 0.01060514978541024,
+              "share": 0.005767173840911245
+            },
+            {
+              "rank": 25,
+              "feature": "lag_29",
+              "mean_abs_shap": 0.009991289839643052,
+              "share": 0.005433351396830152
+            },
+            {
+              "rank": 26,
+              "feature": "roll_std_56",
+              "mean_abs_shap": 0.0069104629366109754,
+              "share": 0.0037579705975899946
+            },
+            {
+              "rank": 27,
+              "feature": "roll_std_112",
+              "mean_abs_shap": 0.006736769429697972,
+              "share": 0.003663514539007691
+            },
+            {
+              "rank": 28,
+              "feature": "days_since_release",
+              "mean_abs_shap": 0.00545957854892294,
+              "share": 0.0029689668912611746
+            },
+            {
+              "rank": 29,
+              "feature": "month",
+              "mean_abs_shap": 0.005410423198243941,
+              "share": 0.002942235778706146
+            },
+            {
+              "rank": 30,
+              "feature": "lag_56",
+              "mean_abs_shap": 0.004234545117020466,
+              "share": 0.002302782923503441
+            },
+            {
+              "rank": 31,
+              "feature": "price_rel_item_max",
+              "mean_abs_shap": 0.0035587229336422,
+              "share": 0.001935264868977831
+            },
+            {
+              "rank": 32,
+              "feature": "price_n_changes",
+              "mean_abs_shap": 0.002997831470752245,
+              "share": 0.0016302471523191259
+            },
+            {
+              "rank": 33,
+              "feature": "year",
+              "mean_abs_shap": 0.0029815635423459793,
+              "share": 0.0016214005095984824
+            },
+            {
+              "rank": 34,
+              "feature": "price_rel_dept",
+              "mean_abs_shap": 0.002970095569491781,
+              "share": 0.0016151641249748535
+            },
+            {
+              "rank": 35,
+              "feature": "snap",
+              "mean_abs_shap": 0.0024613888237855664,
+              "share": 0.0013385249170526732
+            },
+            {
+              "rank": 36,
+              "feature": "lag_34",
+              "mean_abs_shap": 0.0019383901276237368,
+              "share": 0.0010541136206196247
+            },
+            {
+              "rank": 37,
+              "feature": "lag_33",
+              "mean_abs_shap": 0.001876441009148904,
+              "share": 0.0010204251444769234
+            },
+            {
+              "rank": 38,
+              "feature": "lag_32",
+              "mean_abs_shap": 0.0018463244893245142,
+              "share": 0.001004047515794163
+            },
+            {
+              "rank": 39,
+              "feature": "cat_id",
+              "mean_abs_shap": 0.0016525607300900216,
+              "share": 0.0008986770772633352
+            },
+            {
+              "rank": 40,
+              "feature": "price_item_std",
+              "mean_abs_shap": 0.0015952644932020097,
+              "share": 0.0008675188791002328
+            },
+            {
+              "rank": 41,
+              "feature": "price_change_1w",
+              "mean_abs_shap": 0.001410561006560249,
+              "share": 0.000767075496588945
+            },
+            {
+              "rank": 42,
+              "feature": "quarter",
+              "mean_abs_shap": 0.0008904222054308727,
+              "share": 0.0004842194362584179
+            },
+            {
+              "rank": 43,
+              "feature": "lag_49",
+              "mean_abs_shap": 0.0007218631510239442,
+              "share": 0.0003925555381622564
+            },
+            {
+              "rank": 44,
+              "feature": "lag_35",
+              "mean_abs_shap": 0.00027774349990032556,
+              "share": 0.0001510393610198623
+            },
+            {
+              "rank": 45,
+              "feature": "lag_42",
+              "mean_abs_shap": 0.00020157581667892282,
+              "share": 0.0001096187041610968
+            },
+            {
+              "rank": 46,
+              "feature": "event_type_1",
+              "mean_abs_shap": 0.00019803168109186475,
+              "share": 0.00010769137201964576
+            },
+            {
+              "rank": 47,
+              "feature": "is_weekend",
+              "mean_abs_shap": 0.00015695338118578174,
+              "share": 8.535263080041416e-05
+            },
+            {
+              "rank": 48,
+              "feature": "lag_30",
+              "mean_abs_shap": 0.00012629634117853028,
+              "share": 6.868106248246128e-05
+            },
+            {
+              "rank": 49,
+              "feature": "has_event",
+              "mean_abs_shap": 5.820612847985883e-05,
+              "share": 3.1653005223138914e-05
+            },
+            {
+              "rank": 50,
+              "feature": "lag_31",
+              "mean_abs_shap": 5.722787317346388e-05,
+              "share": 3.112102137312907e-05
+            },
+            {
+              "rank": 51,
+              "feature": "event_name_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 52,
+              "feature": "event_type_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            }
+          ],
+          "group_importance": [
+            {
+              "group": "rolling means",
+              "rank": 1,
+              "mean_abs_shap": 0.7624119554172092,
+              "share": 0.46373971409672304
+            },
+            {
+              "group": "product identity",
+              "rank": 2,
+              "mean_abs_shap": 0.30217812529841526,
+              "share": 0.1838008919410077
+            },
+            {
+              "group": "weekday",
+              "rank": 3,
+              "mean_abs_shap": 0.12555300656682752,
+              "share": 0.07636805136066253
+            },
+            {
+              "group": "rolling std devs",
+              "rank": 4,
+              "mean_abs_shap": 0.1250815704433736,
+              "share": 0.07608129870476306
+            },
+            {
+              "group": "same-weekday mean",
+              "rank": 5,
+              "mean_abs_shap": 0.0904863178163162,
+              "share": 0.055038616401078176
+            },
+            {
+              "group": "zero-sales share",
+              "rank": 6,
+              "mean_abs_shap": 0.0777009752905079,
+              "share": 0.04726188750088341
+            },
+            {
+              "group": "sales lags",
+              "rank": 7,
+              "mean_abs_shap": 0.05975766606494695,
+              "share": 0.03634780748011921
+            },
+            {
+              "group": "price",
+              "rank": 8,
+              "mean_abs_shap": 0.05492650629592155,
+              "share": 0.03340923780774644
+            },
+            {
+              "group": "other calendar",
+              "rank": 9,
+              "mean_abs_shap": 0.027287249310952572,
+              "share": 0.016597563960054237
+            },
+            {
+              "group": "events",
+              "rank": 10,
+              "mean_abs_shap": 0.010747123134227777,
+              "share": 0.006536974891614576
+            },
+            {
+              "group": "days since release",
+              "rank": 11,
+              "mean_abs_shap": 0.00545957854892294,
+              "share": 0.00332080757309302
+            },
+            {
+              "group": "snap",
+              "rank": 12,
+              "mean_abs_shap": 0.0024613888237855664,
+              "share": 0.0014971482822545247
+            }
+          ]
+        },
+        {
+          "fold": 2,
+          "test_days": [
+            1886,
+            1913
+          ],
+          "params": {
+            "tweedie_variance_power": 1.1,
+            "max_depth": 6
+          },
+          "rounds": 286,
+          "wrmsse_recorded": 0.47381270710596884,
+          "wrmsse_rebuilt": 0.47381270710596884,
+          "n_rows": 85372,
+          "base_value": 0.4794190526008606,
+          "max_additivity_error": 3.6220713623968948e-06,
+          "importance": [
+            {
+              "rank": 1,
+              "feature": "roll_mean_14",
+              "mean_abs_shap": 0.38549903136376856,
+              "share": 0.22172643003362183
+            },
+            {
+              "rank": 2,
+              "feature": "item_id",
+              "mean_abs_shap": 0.23990187762053608,
+              "share": 0.13798371086688974
+            },
+            {
+              "rank": 3,
+              "feature": "roll_mean_28",
+              "mean_abs_shap": 0.18410899981812995,
+              "share": 0.10589347299348716
+            },
+            {
+              "rank": 4,
+              "feature": "roll_mean_7",
+              "mean_abs_shap": 0.14628257012608167,
+              "share": 0.0841369482446057
+            },
+            {
+              "rank": 5,
+              "feature": "roll_std_182",
+              "mean_abs_shap": 0.09341854563116511,
+              "share": 0.05373129096707246
+            },
+            {
+              "rank": 6,
+              "feature": "same_dow_mean_4",
+              "mean_abs_shap": 0.07417090143849552,
+              "share": 0.04266067577434358
+            },
+            {
+              "rank": 7,
+              "feature": "day_of_week",
+              "mean_abs_shap": 0.0707761311427211,
+              "share": 0.04070811497074466
+            },
+            {
+              "rank": 8,
+              "feature": "wday",
+              "mean_abs_shap": 0.06553012062172371,
+              "share": 0.037690781358712934
+            },
+            {
+              "rank": 9,
+              "feature": "dept_id",
+              "mean_abs_shap": 0.057802059181436334,
+              "share": 0.03324585326596636
+            },
+            {
+              "rank": 10,
+              "feature": "roll_mean_56",
+              "mean_abs_shap": 0.051169872493082726,
+              "share": 0.0294312364755612
+            },
+            {
+              "rank": 11,
+              "feature": "zero_frac_28",
+              "mean_abs_shap": 0.041376193723422654,
+              "share": 0.023798232878092518
+            },
+            {
+              "rank": 12,
+              "feature": "zero_frac_112",
+              "mean_abs_shap": 0.03872026045826399,
+              "share": 0.022270626961138924
+            },
+            {
+              "rank": 13,
+              "feature": "price_rel_item_mean",
+              "mean_abs_shap": 0.0321084695994723,
+              "share": 0.018467741184584417
+            },
+            {
+              "rank": 14,
+              "feature": "lag_28",
+              "mean_abs_shap": 0.028597654323281988,
+              "share": 0.01644843510502485
+            },
+            {
+              "rank": 15,
+              "feature": "lag_364",
+              "mean_abs_shap": 0.02809757328406128,
+              "share": 0.016160804852980763
+            },
+            {
+              "rank": 16,
+              "feature": "sell_price",
+              "mean_abs_shap": 0.027257730514141088,
+              "share": 0.01567775476980628
+            },
+            {
+              "rank": 17,
+              "feature": "roll_mean_182",
+              "mean_abs_shap": 0.02559759241638469,
+              "share": 0.014722897652588293
+            },
+            {
+              "rank": 18,
+              "feature": "roll_mean_112",
+              "mean_abs_shap": 0.02468169715779747,
+              "share": 0.014196104666227621
+            },
+            {
+              "rank": 19,
+              "feature": "day_of_month",
+              "mean_abs_shap": 0.022522480533545636,
+              "share": 0.012954193909484789
+            },
+            {
+              "rank": 20,
+              "feature": "lag_29",
+              "mean_abs_shap": 0.010954209638706209,
+              "share": 0.006300502982946002
+            },
+            {
+              "rank": 21,
+              "feature": "roll_std_14",
+              "mean_abs_shap": 0.010935573779007028,
+              "share": 0.006289784246177483
+            },
+            {
+              "rank": 22,
+              "feature": "roll_std_28",
+              "mean_abs_shap": 0.010477088610627515,
+              "share": 0.00602607857810221
+            },
+            {
+              "rank": 23,
+              "feature": "roll_std_7",
+              "mean_abs_shap": 0.010384139656102473,
+              "share": 0.005972617380575238
+            },
+            {
+              "rank": 24,
+              "feature": "week_of_year",
+              "mean_abs_shap": 0.010184260371243505,
+              "share": 0.005857653355600472
+            },
+            {
+              "rank": 25,
+              "feature": "roll_std_112",
+              "mean_abs_shap": 0.00485422207422418,
+              "share": 0.0027919897160324954
+            },
+            {
+              "rank": 26,
+              "feature": "lag_56",
+              "mean_abs_shap": 0.00480525283133854,
+              "share": 0.0027638242097066533
+            },
+            {
+              "rank": 27,
+              "feature": "event_name_1",
+              "mean_abs_shap": 0.004201804096350491,
+              "share": 0.0024167402410547397
+            },
+            {
+              "rank": 28,
+              "feature": "days_since_release",
+              "mean_abs_shap": 0.004098255186898043,
+              "share": 0.0023571822962642104
+            },
+            {
+              "rank": 29,
+              "feature": "price_rel_item_max",
+              "mean_abs_shap": 0.003689790911446672,
+              "share": 0.002122247009211205
+            },
+            {
+              "rank": 30,
+              "feature": "cat_id",
+              "mean_abs_shap": 0.0031731577398723776,
+              "share": 0.0018250965121921294
+            },
+            {
+              "rank": 31,
+              "feature": "roll_std_56",
+              "mean_abs_shap": 0.0031267133183709383,
+              "share": 0.001798383200519049
+            },
+            {
+              "rank": 32,
+              "feature": "year",
+              "mean_abs_shap": 0.002927019300553448,
+              "share": 0.0016835257350849503
+            },
+            {
+              "rank": 33,
+              "feature": "price_n_changes",
+              "mean_abs_shap": 0.0026665235227504263,
+              "share": 0.001533697086626966
+            },
+            {
+              "rank": 34,
+              "feature": "snap",
+              "mean_abs_shap": 0.002516996942288379,
+              "share": 0.0014476942897750597
+            },
+            {
+              "rank": 35,
+              "feature": "price_rel_dept",
+              "mean_abs_shap": 0.0023232389986914135,
+              "share": 0.001336251060015368
+            },
+            {
+              "rank": 36,
+              "feature": "month",
+              "mean_abs_shap": 0.00182667969840237,
+              "share": 0.00105064639698007
+            },
+            {
+              "rank": 37,
+              "feature": "price_item_std",
+              "mean_abs_shap": 0.0012794490295539105,
+              "share": 0.0007358972206217406
+            },
+            {
+              "rank": 38,
+              "feature": "lag_32",
+              "mean_abs_shap": 0.0012008856124327673,
+              "share": 0.0006907101135416303
+            },
+            {
+              "rank": 39,
+              "feature": "lag_33",
+              "mean_abs_shap": 0.0010923688687508996,
+              "share": 0.0006282948330405766
+            },
+            {
+              "rank": 40,
+              "feature": "quarter",
+              "mean_abs_shap": 0.0008583493642755188,
+              "share": 0.0004936944707465402
+            },
+            {
+              "rank": 41,
+              "feature": "price_change_1w",
+              "mean_abs_shap": 0.0006877419615621455,
+              "share": 0.0003955666746607209
+            },
+            {
+              "rank": 42,
+              "feature": "is_weekend",
+              "mean_abs_shap": 0.0005264752023313652,
+              "share": 0.0003028113110977161
+            },
+            {
+              "rank": 43,
+              "feature": "lag_34",
+              "mean_abs_shap": 0.0005093546168320607,
+              "share": 0.00029296411047203137
+            },
+            {
+              "rank": 44,
+              "feature": "lag_49",
+              "mean_abs_shap": 0.0003644727170618086,
+              "share": 0.0002096327819887862
+            },
+            {
+              "rank": 45,
+              "feature": "lag_42",
+              "mean_abs_shap": 0.00032057436851388885,
+              "share": 0.00018438388817582842
+            },
+            {
+              "rank": 46,
+              "feature": "lag_31",
+              "mean_abs_shap": 0.0002898669441952044,
+              "share": 0.00016672198239717375
+            },
+            {
+              "rank": 47,
+              "feature": "event_type_1",
+              "mean_abs_shap": 0.0002722207730088561,
+              "share": 0.00015657248208048136
+            },
+            {
+              "rank": 48,
+              "feature": "lag_30",
+              "mean_abs_shap": 0.00023123235967972697,
+              "share": 0.00013299728779773775
+            },
+            {
+              "rank": 49,
+              "feature": "lag_35",
+              "mean_abs_shap": 0.00022524700195822046,
+              "share": 0.00012955470586602984
+            },
+            {
+              "rank": 50,
+              "feature": "event_name_2",
+              "mean_abs_shap": 1.6984792867579907e-06,
+              "share": 9.769097146797562e-07
+            },
+            {
+              "rank": 51,
+              "feature": "event_type_2",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            },
+            {
+              "rank": 52,
+              "feature": "has_event",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            }
+          ],
+          "group_importance": [
+            {
+              "group": "rolling means",
+              "rank": 1,
+              "mean_abs_shap": 0.7632100978457762,
+              "share": 0.4893268027174041
+            },
+            {
+              "group": "product identity",
+              "rank": 2,
+              "mean_abs_shap": 0.2767552883252601,
+              "share": 0.17743971254255897
+            },
+            {
+              "group": "weekday",
+              "rank": 3,
+              "mean_abs_shap": 0.11921284686388074,
+              "share": 0.07643248086391276
+            },
+            {
+              "group": "rolling std devs",
+              "rank": 4,
+              "mean_abs_shap": 0.10615734799678303,
+              "share": 0.06806203930850172
+            },
+            {
+              "group": "zero-sales share",
+              "rank": 5,
+              "mean_abs_shap": 0.07513184895898735,
+              "share": 0.04817025814663318
+            },
+            {
+              "group": "same-weekday mean",
+              "rank": 6,
+              "mean_abs_shap": 0.07417090143849552,
+              "share": 0.04755415338189184
+            },
+            {
+              "group": "sales lags",
+              "rank": 7,
+              "mean_abs_shap": 0.06031468343092064,
+              "share": 0.038670336364088134
+            },
+            {
+              "group": "price",
+              "rank": 8,
+              "mean_abs_shap": 0.04943850719496754,
+              "share": 0.031697152232547245
+            },
+            {
+              "group": "other calendar",
+              "rank": 9,
+              "mean_abs_shap": 0.024240359467105867,
+              "share": 0.015541536502516698
+            },
+            {
+              "group": "events",
+              "rank": 10,
+              "mean_abs_shap": 0.004467342660585428,
+              "share": 0.0028642054224878163
+            },
+            {
+              "group": "days since release",
+              "rank": 11,
+              "mean_abs_shap": 0.004098255186898043,
+              "share": 0.0026275675767199694
+            },
+            {
+              "group": "snap",
+              "rank": 12,
+              "mean_abs_shap": 0.002516996942288379,
+              "share": 0.0016137549407376085
+            }
+          ]
+        },
+        {
+          "fold": 3,
+          "test_days": [
+            1914,
+            1941
+          ],
+          "params": {
+            "tweedie_variance_power": 1.1,
+            "max_depth": 6
+          },
+          "rounds": 567,
+          "wrmsse_recorded": 0.5188626735168337,
+          "wrmsse_rebuilt": 0.5188626735168337,
+          "n_rows": 85372,
+          "base_value": 0.47773194313049316,
+          "max_additivity_error": 5.107413584948262e-06,
+          "importance": [
+            {
+              "rank": 1,
+              "feature": "roll_mean_14",
+              "mean_abs_shap": 0.35422700723569256,
+              "share": 0.1904012871031024
+            },
+            {
+              "rank": 2,
+              "feature": "item_id",
+              "mean_abs_shap": 0.32781858580537165,
+              "share": 0.17620644219296083
+            },
+            {
+              "rank": 3,
+              "feature": "roll_mean_28",
+              "mean_abs_shap": 0.17435955691151542,
+              "share": 0.09372036399412645
+            },
+            {
+              "rank": 4,
+              "feature": "roll_mean_7",
+              "mean_abs_shap": 0.13455574343978727,
+              "share": 0.07232533436109173
+            },
+            {
+              "rank": 5,
+              "feature": "roll_std_182",
+              "mean_abs_shap": 0.08780548654516065,
+              "share": 0.0471965076389245
+            },
+            {
+              "rank": 6,
+              "feature": "same_dow_mean_4",
+              "mean_abs_shap": 0.08107732144377533,
+              "share": 0.04358003777926311
+            },
+            {
+              "rank": 7,
+              "feature": "day_of_week",
+              "mean_abs_shap": 0.07168964528061653,
+              "share": 0.038534048659683504
+            },
+            {
+              "rank": 8,
+              "feature": "wday",
+              "mean_abs_shap": 0.06817671804987141,
+              "share": 0.03664580791978881
+            },
+            {
+              "rank": 9,
+              "feature": "dept_id",
+              "mean_abs_shap": 0.06109207764035802,
+              "share": 0.03283772828418817
+            },
+            {
+              "rank": 10,
+              "feature": "zero_frac_112",
+              "mean_abs_shap": 0.05111564071450881,
+              "share": 0.02747527315630822
+            },
+            {
+              "rank": 11,
+              "feature": "zero_frac_28",
+              "mean_abs_shap": 0.04626732512012231,
+              "share": 0.02486924507093694
+            },
+            {
+              "rank": 12,
+              "feature": "roll_mean_56",
+              "mean_abs_shap": 0.04417227764077641,
+              "share": 0.023743131791990495
+            },
+            {
+              "rank": 13,
+              "feature": "price_rel_item_mean",
+              "mean_abs_shap": 0.03743325356930053,
+              "share": 0.02012082510498499
+            },
+            {
+              "rank": 14,
+              "feature": "lag_364",
+              "mean_abs_shap": 0.028535351902847558,
+              "share": 0.015338095682317815
+            },
+            {
+              "rank": 15,
+              "feature": "lag_28",
+              "mean_abs_shap": 0.027208830457058065,
+              "share": 0.014625074412090008
+            },
+            {
+              "rank": 16,
+              "feature": "roll_mean_182",
+              "mean_abs_shap": 0.026769303487438275,
+              "share": 0.014388823366792236
+            },
+            {
+              "rank": 17,
+              "feature": "day_of_month",
+              "mean_abs_shap": 0.02667702604995846,
+              "share": 0.01433922313161016
+            },
+            {
+              "rank": 18,
+              "feature": "sell_price",
+              "mean_abs_shap": 0.02587255452216345,
+              "share": 0.013906809986363861
+            },
+            {
+              "rank": 19,
+              "feature": "roll_mean_112",
+              "mean_abs_shap": 0.022957893930387396,
+              "share": 0.012340144777876245
+            },
+            {
+              "rank": 20,
+              "feature": "roll_std_14",
+              "mean_abs_shap": 0.01872992105765849,
+              "share": 0.010067558384515918
+            },
+            {
+              "rank": 21,
+              "feature": "week_of_year",
+              "mean_abs_shap": 0.013651248171802521,
+              "share": 0.0073377104776927125
+            },
+            {
+              "rank": 22,
+              "feature": "lag_29",
+              "mean_abs_shap": 0.013137977215147041,
+              "share": 0.007061821150273872
+            },
+            {
+              "rank": 23,
+              "feature": "roll_std_7",
+              "mean_abs_shap": 0.01283923779372547,
+              "share": 0.006901245109528179
+            },
+            {
+              "rank": 24,
+              "feature": "roll_std_28",
+              "mean_abs_shap": 0.012219795298082724,
+              "share": 0.006568287299853715
+            },
+            {
+              "rank": 25,
+              "feature": "event_name_1",
+              "mean_abs_shap": 0.0121814305689223,
+              "share": 0.006547665795388229
+            },
+            {
+              "rank": 26,
+              "feature": "roll_std_112",
+              "mean_abs_shap": 0.009001296338401053,
+              "share": 0.004838305305410128
+            },
+            {
+              "rank": 27,
+              "feature": "lag_56",
+              "mean_abs_shap": 0.008387575533412904,
+              "share": 0.004508422973445686
+            },
+            {
+              "rank": 28,
+              "feature": "days_since_release",
+              "mean_abs_shap": 0.008364864625542515,
+              "share": 0.004496215586652829
+            },
+            {
+              "rank": 29,
+              "feature": "price_rel_item_max",
+              "mean_abs_shap": 0.007325765834745145,
+              "share": 0.00393768745877506
+            },
+            {
+              "rank": 30,
+              "feature": "roll_std_56",
+              "mean_abs_shap": 0.006962595249212364,
+              "share": 0.003742478890509626
+            },
+            {
+              "rank": 31,
+              "feature": "lag_32",
+              "mean_abs_shap": 0.0057253479159223,
+              "share": 0.0030774435320775535
+            },
+            {
+              "rank": 32,
+              "feature": "price_n_changes",
+              "mean_abs_shap": 0.004501370953423689,
+              "share": 0.0024195411579392132
+            },
+            {
+              "rank": 33,
+              "feature": "price_rel_dept",
+              "mean_abs_shap": 0.003960417772323497,
+              "share": 0.0021287723011324754
+            },
+            {
+              "rank": 34,
+              "feature": "price_item_std",
+              "mean_abs_shap": 0.003659519604203779,
+              "share": 0.0019670359080097457
+            },
+            {
+              "rank": 35,
+              "feature": "lag_33",
+              "mean_abs_shap": 0.003579247674953159,
+              "share": 0.0019238887782444603
+            },
+            {
+              "rank": 36,
+              "feature": "year",
+              "mean_abs_shap": 0.003275014230262198,
+              "share": 0.0017603596337531513
+            },
+            {
+              "rank": 37,
+              "feature": "snap",
+              "mean_abs_shap": 0.002995773931914051,
+              "share": 0.0016102646067492807
+            },
+            {
+              "rank": 38,
+              "feature": "lag_34",
+              "mean_abs_shap": 0.002347029589594704,
+              "share": 0.001261556701210414
+            },
+            {
+              "rank": 39,
+              "feature": "cat_id",
+              "mean_abs_shap": 0.0021674299120892403,
+              "share": 0.0011650197092198816
+            },
+            {
+              "rank": 40,
+              "feature": "month",
+              "mean_abs_shap": 0.002124887599984842,
+              "share": 0.0011421527035552633
+            },
+            {
+              "rank": 41,
+              "feature": "quarter",
+              "mean_abs_shap": 0.0012879546023846918,
+              "share": 0.0006922911269191904
+            },
+            {
+              "rank": 42,
+              "feature": "lag_49",
+              "mean_abs_shap": 0.0009086395987044968,
+              "share": 0.0004884047392554382
+            },
+            {
+              "rank": 43,
+              "feature": "price_change_1w",
+              "mean_abs_shap": 0.0007372649514272758,
+              "share": 0.0003962888001771058
+            },
+            {
+              "rank": 44,
+              "feature": "is_weekend",
+              "mean_abs_shap": 0.0007186499984606392,
+              "share": 0.00038628303852761915
+            },
+            {
+              "rank": 45,
+              "feature": "event_type_1",
+              "mean_abs_shap": 0.0006294494648310839,
+              "share": 0.0003383366762615419
+            },
+            {
+              "rank": 46,
+              "feature": "lag_30",
+              "mean_abs_shap": 0.0003845827688972935,
+              "share": 0.0002067178749783971
+            },
+            {
+              "rank": 47,
+              "feature": "lag_35",
+              "mean_abs_shap": 0.0003688880860667751,
+              "share": 0.00019828179373511306
+            },
+            {
+              "rank": 48,
+              "feature": "lag_31",
+              "mean_abs_shap": 0.0002168229319955002,
+              "share": 0.00011654494005857353
+            },
+            {
+              "rank": 49,
+              "feature": "lag_42",
+              "mean_abs_shap": 0.0002029403349346093,
+              "share": 0.0001090828767637536
+            },
+            {
+              "rank": 50,
+              "feature": "event_name_2",
+              "mean_abs_shap": 1.7197552922786785e-05,
+              "share": 9.24389203712976e-06
+            },
+            {
+              "rank": 51,
+              "feature": "event_type_2",
+              "mean_abs_shap": 1.64901035747561e-06,
+              "share": 8.863629483248125e-07
+            },
+            {
+              "rank": 52,
+              "feature": "has_event",
+              "mean_abs_shap": 0.0,
+              "share": 0.0
+            }
+          ],
+          "group_importance": [
+            {
+              "group": "rolling means",
+              "rank": 1,
+              "mean_abs_shap": 0.6865204399571657,
+              "share": 0.4243352044387823
+            },
+            {
+              "group": "product identity",
+              "rank": 2,
+              "mean_abs_shap": 0.36917353808706005,
+              "share": 0.2281845079038511
+            },
+            {
+              "group": "weekday",
+              "rank": 3,
+              "mean_abs_shap": 0.12162170177290219,
+              "share": 0.07517382831196852
+            },
+            {
+              "group": "rolling std devs",
+              "rank": 4,
+              "mean_abs_shap": 0.09539356691601088,
+              "share": 0.05896233580747537
+            },
+            {
+              "group": "zero-sales share",
+              "rank": 5,
+              "mean_abs_shap": 0.09265619555491765,
+              "share": 0.05727037884810671
+            },
+            {
+              "group": "same-weekday mean",
+              "rank": 6,
+              "mean_abs_shap": 0.08107732144377533,
+              "share": 0.050113528698926796
+            },
+            {
+              "group": "sales lags",
+              "rank": 7,
+              "mean_abs_shap": 0.06132755358130568,
+              "share": 0.03790628577392016
+            },
+            {
+              "group": "price",
+              "rank": 8,
+              "mean_abs_shap": 0.05691798997398581,
+              "share": 0.035180754288048253
+            },
+            {
+              "group": "other calendar",
+              "rank": 9,
+              "mean_abs_shap": 0.029048376113106678,
+              "share": 0.01795467097431045
+            },
+            {
+              "group": "events",
+              "rank": 10,
+              "mean_abs_shap": 0.012775606745329333,
+              "share": 0.007896545222232643
+            },
+            {
+              "group": "days since release",
+              "rank": 11,
+              "mean_abs_shap": 0.008364864625542515,
+              "share": 0.00517028530309132
+            },
+            {
+              "group": "snap",
+              "rank": 12,
+              "mean_abs_shap": 0.002995773931914051,
+              "share": 0.0018516744292863862
+            }
+          ]
+        }
+      ],
+      "latest_fold": {
+        "fold": 3,
+        "series": [
+          {
+            "id": "FOODS_3_090_CA_1_evaluation",
+            "why_chosen": "most units sold in the last 28 training days",
+            "n_days": 28,
+            "units_last_28_training_days": 1423.0,
+            "actual_units": 1652.0,
+            "forecast_units": 1157.7147998809814,
+            "days_since_release_at_start": 1913,
+            "zero_frac_112_at_start": 0.2678571343421936,
+            "mean_base_value": 0.47773194313049316,
+            "top_features": [
+              {
+                "feature": "item_id",
+                "mean_shap": 1.3859257229736872
+              },
+              {
+                "feature": "roll_mean_14",
+                "mean_shap": 0.6242685679878507
+              },
+              {
+                "feature": "roll_mean_28",
+                "mean_shap": 0.49459339465413776
+              },
+              {
+                "feature": "same_dow_mean_4",
+                "mean_shap": 0.27569843349712236
+              },
+              {
+                "feature": "roll_mean_7",
+                "mean_shap": 0.16110194048711232
+              }
+            ]
+          },
+          {
+            "id": "FOODS_3_566_CA_1_evaluation",
+            "why_chosen": "largest total absolute error over the 28 test days",
+            "n_days": 28,
+            "units_last_28_training_days": 160.0,
+            "actual_units": 750.0,
+            "forecast_units": 156.0164680480957,
+            "days_since_release_at_start": 1122,
+            "zero_frac_112_at_start": 0.0625,
+            "mean_base_value": 0.47773194313049316,
+            "top_features": [
+              {
+                "feature": "roll_mean_14",
+                "mean_shap": 0.40593304272208897
+              },
+              {
+                "feature": "item_id",
+                "mean_shap": 0.3509881262268339
+              },
+              {
+                "feature": "roll_mean_28",
+                "mean_shap": 0.27793625582541737
+              },
+              {
+                "feature": "roll_std_182",
+                "mean_shap": 0.07381090841123036
+              },
+              {
+                "feature": "roll_mean_56",
+                "mean_shap": 0.052845856973103116
+              }
+            ]
+          },
+          {
+            "id": "FOODS_3_595_CA_1_evaluation",
+            "why_chosen": "most recently released item",
+            "n_days": 28,
+            "units_last_28_training_days": 38.0,
+            "actual_units": 44.0,
+            "forecast_units": 33.58735907077789,
+            "days_since_release_at_start": 72,
+            "zero_frac_112_at_start": null,
+            "mean_base_value": 0.47773194313049316,
+            "top_features": [
+              {
+                "feature": "item_id",
+                "mean_shap": -0.16340117688689912
+              },
+              {
+                "feature": "roll_mean_14",
+                "mean_shap": -0.0802980322789933
+              },
+              {
+                "feature": "roll_mean_7",
+                "mean_shap": -0.0781432280449995
+              },
+              {
+                "feature": "roll_mean_28",
+                "mean_shap": 0.06660780131018587
+              },
+              {
+                "feature": "same_dow_mean_4",
+                "mean_shap": -0.04111301459904228
+              }
+            ]
+          }
+        ],
+        "segments": [
+          {
+            "segment": "all rows",
+            "n_rows": 85372,
+            "share_of_rows": 1.0,
+            "actual_units_per_row": 1.5699761045776133,
+            "forecast_units_per_row": 1.4908567642402757,
+            "bias": -0.05039525130774125,
+            "mae": 1.1421418372062304,
+            "mae_over_mean_actual": 0.7274899496088271,
+            "top_features": [
+              "roll_mean_14",
+              "item_id",
+              "roll_mean_28"
+            ]
+          },
+          {
+            "segment": "new item (< 182 days on sale)",
+            "n_rows": 112,
+            "share_of_rows": 0.0013119055428009183,
+            "actual_units_per_row": 0.9196428571428571,
+            "forecast_units_per_row": 0.7370878010988235,
+            "bias": -0.1985064687080753,
+            "mae": 0.83538074738213,
+            "mae_over_mean_actual": 0.9083751816194036,
+            "top_features": [
+              "item_id",
+              "roll_mean_14",
+              "roll_mean_7"
+            ]
+          },
+          {
+            "segment": "regular seller (< 25% zero days)",
+            "n_rows": 13956,
+            "share_of_rows": 0.16347280138687156,
+            "actual_units_per_row": 4.875179134422471,
+            "forecast_units_per_row": 4.825485024232856,
+            "bias": -0.010193289070905331,
+            "mae": 2.504781338803985,
+            "mae_over_mean_actual": 0.5137824210639409,
+            "top_features": [
+              "roll_mean_14",
+              "roll_mean_28",
+              "item_id"
+            ]
+          },
+          {
+            "segment": "intermittent (25-75% zero days)",
+            "n_rows": 45097,
+            "share_of_rows": 0.5282411094972591,
+            "actual_units_per_row": 1.1585914805862918,
+            "forecast_units_per_row": 1.097665895986185,
+            "bias": -0.052585907648204255,
+            "mae": 1.0545387648253028,
+            "mae_over_mean_actual": 0.910190332395389,
+            "top_features": [
+              "roll_mean_14",
+              "item_id",
+              "roll_mean_7"
+            ]
+          },
+          {
+            "segment": "mostly zero (>= 75% zero days)",
+            "n_rows": 26227,
+            "share_of_rows": 0.30720845241999717,
+            "actual_units_per_row": 0.5206085331909864,
+            "forecast_units_per_row": 0.3951563332079645,
+            "bias": -0.240972231503934,
+            "mae": 0.5684734310513561,
+            "mae_over_mean_actual": 1.0919402868158719,
+            "top_features": [
+              "item_id",
+              "roll_mean_14",
+              "roll_mean_28"
+            ]
+          },
+          {
+            "segment": "price changed vs last week",
+            "n_rows": 460,
+            "share_of_rows": 0.005388183479360914,
+            "actual_units_per_row": 1.141304347826087,
+            "forecast_units_per_row": 1.055400805786738,
+            "bias": -0.0752678654059058,
+            "mae": 0.9222752453637836,
+            "mae_over_mean_actual": 0.8080887864139819,
+            "top_features": [
+              "roll_mean_14",
+              "item_id",
+              "roll_mean_28"
+            ]
+          }
+        ],
+        "snap_feature": {
+          "n_snap_rows": 30490,
+          "FOODS": {
+            "mean_snap_shap": 0.005113357488880771,
+            "implied_multiplier": 1.0051264530124688
+          },
+          "non-food": {
+            "mean_snap_shap": 0.0030543090858386433,
+            "implied_multiplier": 1.0030589782403048
+          }
+        }
+      }
+    }
+  }
+}

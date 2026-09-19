@@ -22,25 +22,34 @@ def load_calendar(raw_dir: Path) -> pd.DataFrame:
     return cal.drop(columns=["weekday"])
 
 
+def _load_sales(raw_dir: Path, column: str, value: str, chunksize: int) -> pd.DataFrame:
+    path = raw_dir / "sales_train_evaluation.csv"
+    days = day_columns(path)
+    dtypes: dict[str, str] = {c: "str" for c in ID_COLS} | {d: "int16" for d in days}
+    parts = [
+        chunk[chunk[column] == value]
+        for chunk in pd.read_csv(path, dtype=dtypes, chunksize=chunksize)
+    ]
+    sales = pd.concat(parts, ignore_index=True)
+    if sales.empty:
+        raise ValueError(f"{column} {value!r} not found in {path.name}")
+    for col in ID_COLS:
+        sales[col] = sales[col].astype("category")
+    return sales
+
+
 def load_store_sales(raw_dir: Path, store_id: str, chunksize: int = 2_000) -> pd.DataFrame:
     """Wide sales for one store: one row per series, int16 day columns d_1..d_N.
 
     The full file is read in chunks and filtered, so peak memory stays far below the
     size of the whole table (30,490 x 1,941 values).
     """
-    path = raw_dir / "sales_train_evaluation.csv"
-    days = day_columns(path)
-    dtypes: dict[str, str] = {c: "str" for c in ID_COLS} | {d: "int16" for d in days}
-    parts = [
-        chunk[chunk["store_id"] == store_id]
-        for chunk in pd.read_csv(path, dtype=dtypes, chunksize=chunksize)
-    ]
-    sales = pd.concat(parts, ignore_index=True)
-    if sales.empty:
-        raise ValueError(f"store {store_id!r} not found in {path.name}")
-    for col in ID_COLS:
-        sales[col] = sales[col].astype("category")
-    return sales
+    return _load_sales(raw_dir, "store_id", store_id, chunksize)
+
+
+def load_state_sales(raw_dir: Path, state_id: str, chunksize: int = 2_000) -> pd.DataFrame:
+    """Wide sales for every store in one state, read the same way as `load_store_sales`."""
+    return _load_sales(raw_dir, "state_id", state_id, chunksize)
 
 
 def load_store_prices(raw_dir: Path, store_id: str, chunksize: int = 1_000_000) -> pd.DataFrame:
