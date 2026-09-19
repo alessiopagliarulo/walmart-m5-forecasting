@@ -13,15 +13,12 @@ the test rows before calling `predict`, so no model can read what it forecasts.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Protocol
 
 import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from m5.data import EVENT_COLS
 from m5.features import TARGET, feature_columns
@@ -73,30 +70,56 @@ def _numeric_features() -> list[str]:
     return [c for c in feature_columns() if c not in {"item_id", *LINEAR_CATEGORICALS}]
 
 
-def _preprocessor(numeric: list[str], categorical: list[str]) -> ColumnTransformer:
-    parts: list[tuple[str, object, list[str]]] = [
-        (
-            "num",
-            Pipeline(
-                [
-                    ("impute", SimpleImputer(strategy="median", add_indicator=True)),
-                    ("scale", StandardScaler()),
-                ]
-            ),
-            numeric,
-        )
-    ]
-    if categorical:
-        encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False, dtype=np.float32)
-        parts.append(("cat", encoder, categorical))
-    return ColumnTransformer(parts, sparse_threshold=0.0)
+class LinearDesign:
+    """Design matrix for the linear models, built column by column into one float32 array.
 
+    Numeric features: missing values filled with 0 plus a 0/1 "was missing" column for
+    every feature that has gaps in training (with that column, the fill value makes no
+    difference to a linear model), then standardised with training statistics.
+    Categoricals: one-hot over the categories seen in training ("none" for no event);
+    unseen categories get all zeros.
 
-def _as_input(frame: pd.DataFrame, numeric: list[str], categorical: list[str]) -> pd.DataFrame:
-    out = frame[numeric].astype("float32")
-    for col in categorical:
-        out[col] = frame[col].astype("object").where(frame[col].notna(), "none")
-    return out
+    Written by hand rather than with a scikit-learn ColumnTransformer because on the
+    4.5 million training rows the latter's intermediate copies needed about 10 GB.
+    """
+
+    def __init__(self, numeric: list[str], categorical: list[str]) -> None:
+        self.numeric = numeric
+        self.categorical = categorical
+
+    def _raw_columns(self, frame: pd.DataFrame) -> Iterator[tuple[str, np.ndarray]]:
+        """Yields one column at a time so only the output matrix is ever held whole."""
+        for name in self.numeric:
+            values = frame[name].to_numpy(dtype="float32", na_value=np.nan)
+            yield name, np.nan_to_num(values, nan=0.0)
+            if name in self.missing_:
+                yield f"{name}_missing", np.isnan(values).astype("float32")
+        for name in self.categorical:
+            labels = frame[name].astype("object").where(frame[name].notna(), "none").to_numpy()
+            for level in self.levels_[name]:
+                yield f"{name}={level}", (labels == level).astype("float32")
+
+    def fit(self, frame: pd.DataFrame) -> LinearDesign:
+        self.missing_ = {n for n in self.numeric if frame[n].isna().any()}
+        self.levels_ = {
+            n: sorted(frame[n].astype("object").where(frame[n].notna(), "none").unique())
+            for n in self.categorical
+        }
+        self.names_: list[str] = []
+        self.mean_: list[float] = []
+        self.std_: list[float] = []
+        for name, col in self._raw_columns(frame):
+            self.names_.append(name)
+            self.mean_.append(float(col.mean(dtype="float64")))
+            std = float(col.std(dtype="float64"))
+            self.std_.append(std if std > 0 else 1.0)
+        return self
+
+    def transform(self, frame: pd.DataFrame) -> np.ndarray:
+        out = np.empty((len(frame), len(self.names_)), dtype="float32")
+        for j, (_, col) in enumerate(self._raw_columns(frame)):
+            out[:, j] = (col - self.mean_[j]) / self.std_[j]
+        return out
 
 
 class _Regression:
@@ -107,20 +130,18 @@ class _Regression:
     numeric: list[str]
     categorical: list[str]
 
-    def _estimator(self) -> object:
+    def _estimator(self) -> LinearRegression | Ridge:
         raise NotImplementedError
 
     def fit(self, train: pd.DataFrame) -> _Regression:
-        self.pipeline_ = Pipeline(
-            [("prep", _preprocessor(self.numeric, self.categorical)), ("model", self._estimator())]
-        )
-        x = _as_input(train, self.numeric, self.categorical)
-        self.pipeline_.fit(x, train[TARGET].to_numpy(dtype="float64"))
+        self.design_ = LinearDesign(self.numeric, self.categorical).fit(train)
+        x = self.design_.transform(train)
+        self.model_ = self._estimator().fit(x, train[TARGET].to_numpy(dtype="float32"))
         return self
 
     def predict(self, test: pd.DataFrame) -> np.ndarray:
-        x = _as_input(test, self.numeric, self.categorical)
-        return np.asarray(np.clip(self.pipeline_.predict(x), 0.0, None))
+        prediction = self.model_.predict(self.design_.transform(test))
+        return np.asarray(np.clip(prediction, 0.0, None), dtype="float64")
 
 
 class LinearBaseline(_Regression):
@@ -129,8 +150,8 @@ class LinearBaseline(_Regression):
     numeric = LINEAR_BASELINE_FEATURES
     categorical: list[str] = []
 
-    def _estimator(self) -> object:
-        return LinearRegression()
+    def _estimator(self) -> LinearRegression:
+        return LinearRegression(copy_X=False)
 
 
 class RidgeModel(_Regression):
@@ -141,8 +162,8 @@ class RidgeModel(_Regression):
         self.numeric = _numeric_features()
         self.categorical = LINEAR_CATEGORICALS
 
-    def _estimator(self) -> object:
-        return Ridge(alpha=RIDGE_ALPHA, solver="cholesky")
+    def _estimator(self) -> Ridge:
+        return Ridge(alpha=RIDGE_ALPHA, solver="cholesky", copy_X=False)
 
 
 class HurdleLogisticRidge:
@@ -165,26 +186,26 @@ class HurdleLogisticRidge:
         self.categorical = LINEAR_CATEGORICALS
 
     def fit(self, train: pd.DataFrame) -> HurdleLogisticRidge:
-        prep = _preprocessor(self.numeric, self.categorical)
-        x = prep.fit_transform(_as_input(train, self.numeric, self.categorical))
-        y = train[TARGET].to_numpy(dtype="float64")
+        self.design_ = LinearDesign(self.numeric, self.categorical).fit(train)
+        x = self.design_.transform(train)
+        y = train[TARGET].to_numpy(dtype="float32")
         sold = y > 0
-        self.prep_ = prep
         self.classifier_ = LogisticRegression(
             C=LOGISTIC_C, max_iter=LOGISTIC_MAX_ITER, random_state=SEED
         ).fit(x, sold)
-        self.size_ = Ridge(alpha=RIDGE_ALPHA, solver="cholesky").fit(x[sold], y[sold])
+        self.size_ = Ridge(alpha=RIDGE_ALPHA, solver="cholesky", copy_X=False)
+        self.size_.fit(x[sold], y[sold])
         return self
 
     def predict_proba_sold(self, test: pd.DataFrame) -> np.ndarray:
-        x = self.prep_.transform(_as_input(test, self.numeric, self.categorical))
-        return np.asarray(self.classifier_.predict_proba(x)[:, 1])
+        proba = self.classifier_.predict_proba(self.design_.transform(test))[:, 1]
+        return np.asarray(proba, dtype="float64")
 
     def predict(self, test: pd.DataFrame) -> np.ndarray:
-        x = self.prep_.transform(_as_input(test, self.numeric, self.categorical))
+        x = self.design_.transform(test)
         p_sold = self.classifier_.predict_proba(x)[:, 1]
         size = np.clip(self.size_.predict(x), 1.0, None)
-        return np.asarray(p_sold * size)
+        return np.asarray(p_sold * size, dtype="float64")
 
 
 MODELS: dict[str, type[Model]] = {
