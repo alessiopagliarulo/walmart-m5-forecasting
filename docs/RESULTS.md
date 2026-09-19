@@ -67,7 +67,7 @@ classifier scores and the search results):
 | seasonal_naive | naive baseline | 0.7661 | 0.9075 | 0.6598 | 0.7778 | - | 1.3228 |
 | linear_regression | linear | 0.8570 | 0.7976 | 0.7885 | 0.8144 | 4.7% worse | 1.1726 |
 | ridge | linear | 0.6205 | 0.5351 | 0.6193 | 0.5916 | 23.9% lower | 1.1315 |
-| hurdle_logistic_ridge | logistic hurdle (classifier x regressor) | 0.6045 | 0.5269 | 0.6033 | 0.5783 | 25.7% lower | 1.1429 |
+| hurdle_logistic_ridge | logistic hurdle | 0.6045 | 0.5269 | 0.6033 | 0.5783 | 25.7% lower | 1.1429 |
 | lightgbm | gradient boosting | 0.5728 | 0.4740 | 0.5292 | 0.5253 | 32.5% lower | 1.1175 |
 | xgboost | gradient boosting | 0.5778 | 0.4738 | 0.5189 | **0.5235** | 32.7% lower | 1.1146 |
 

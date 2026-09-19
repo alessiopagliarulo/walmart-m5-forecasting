@@ -36,7 +36,7 @@ FAMILIES = {
     "seasonal_naive": "naive baseline",
     "linear_regression": "linear",
     "ridge": "linear",
-    "hurdle_logistic_ridge": "logistic hurdle (classifier x regressor)",
+    "hurdle_logistic_ridge": "logistic hurdle",
     "lightgbm": "gradient boosting",
     "xgboost": "gradient boosting",
 }
