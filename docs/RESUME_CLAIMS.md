@@ -4,24 +4,31 @@ Each resume bullet is checked against the committed artifacts. Status is one of
 **verified** (true as worded), **differs** (the measured fact differs from the wording;
 use the suggested wording instead) or **not yet built**.
 
-Every number below is copied from a script-generated file. To regenerate them:
-`uv run m5-features`, then `uv run m5-backtest`, then `uv run m5-plots` and
-`uv run m5-explain`.
+Every number below comes from a script-generated file. To regenerate them:
+`uv run m5-features`, then `uv run m5-backtest`, then `uv run m5-plots`,
+`uv run m5-explain` and `uv run m5-writeup`. The tables and the findings marked
+`GENERATED` are rewritten by `m5-writeup` and checked by `tests/test_writeup.py`; the
+numbers quoted in the claim sections are copied from them and from the artifacts named
+next to each one. The full write-up is [docs/RESULTS.md](RESULTS.md).
 
 ## Scope: what the numbers cover
 
-- **One store only: `CA_1`** (California), 3,049 item series. Nothing here is measured
-  on the other 9 stores or the full 30,490-series competition data, so no claim may
-  imply more than one store.
-- **3 walk-forward folds**, each training on every day up to its cutoff and forecasting
-  the next 28 days (`folds` in `results/metrics.json`):
+<!-- GENERATED:scope:BEGIN -->
 
-  | Fold | Train through | Forecast |
-  | --- | --- | --- |
-  | 1 | 2016-02-28 (d_1857) | 2016-02-29 to 2016-03-27 |
-  | 2 | 2016-03-27 (d_1885) | 2016-03-28 to 2016-04-24 |
-  | 3 | 2016-04-24 (d_1913) | 2016-04-25 to 2016-05-22 |
+- **Store CA_1** (state CA), 3,049 item series, daily sales from 2011-01-29 to 2016-05-22.
+- **28-day horizon**, forecast directly from 52 features whose sales inputs are at least 28 days old.
+- **3 walk-forward folds**, each training on every day up to its cutoff and forecasting the next 28 days; the last fold ends on the last day of sales:
 
+| Fold | Train through | Forecast | Series x days scored |
+| --- | --- | --- | --- |
+| 1 | 2016-02-28 | 2016-02-29 to 2016-03-27 | 85,372 |
+| 2 | 2016-03-27 | 2016-03-28 to 2016-04-24 | 85,372 |
+| 3 | 2016-04-24 | 2016-04-25 to 2016-05-22 | 85,372 |
+
+<!-- GENERATED:scope:END -->
+
+- **One store only.** Nothing here is measured on the other 9 stores or the full
+  30,490-series competition data, so no claim may imply more than one store.
 - **Metric**: the competition's WRMSSE over its 12 levels, lower is better. On one
   store the 12 levels reduce to 4 distinct ones, so the score is not comparable with
   the Kaggle leaderboard, which covers all 10 stores. "Mean WRMSSE" is the average
@@ -36,19 +43,27 @@ Every number below is copied from a script-generated file. To regenerate them:
 
 ## Measured results (mean WRMSSE over 3 folds, from `results/metrics.json`)
 
-| Model | Family | Mean WRMSSE | vs seasonal-naive |
-| --- | --- | --- | --- |
-| seasonal_naive | naive baseline | 0.7778 | - |
-| linear_regression | linear | 0.8144 | 4.7% worse |
-| ridge | linear | 0.5916 | 23.9% lower |
-| hurdle_logistic_ridge | logistic hurdle (classifier x regressor) | 0.5783 | 25.7% lower |
-| lightgbm | gradient boosting | 0.5253 | 32.5% lower |
-| xgboost | gradient boosting | 0.5235 | 32.7% lower |
+<!-- GENERATED:model_table:BEGIN -->
 
-The simple linear regression loses to seasonal-naive. The boosted models beat Ridge
-by about 11% (0.5253 and 0.5235 vs 0.5916) and the hurdle model by about 9%.
-XGBoost and LightGBM are within 0.002 of each other: XGBoost is ahead on folds 2 and 3,
-LightGBM on fold 1. That gap is too small to call either model the winner.
+| Model | Family | Fold 1 | Fold 2 | Fold 3 | Mean WRMSSE | vs seasonal-naive | Mean MAE (units) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| seasonal_naive | naive baseline | 0.7661 | 0.9075 | 0.6598 | 0.7778 | - | 1.3228 |
+| linear_regression | linear | 0.8570 | 0.7976 | 0.7885 | 0.8144 | 4.7% worse | 1.1726 |
+| ridge | linear | 0.6205 | 0.5351 | 0.6193 | 0.5916 | 23.9% lower | 1.1315 |
+| hurdle_logistic_ridge | logistic hurdle | 0.6045 | 0.5269 | 0.6033 | 0.5783 | 25.7% lower | 1.1429 |
+| lightgbm | gradient boosting | 0.5728 | 0.4740 | 0.5292 | 0.5253 | 32.5% lower | 1.1175 |
+| xgboost | gradient boosting | 0.5778 | 0.4738 | 0.5189 | **0.5235** | 32.7% lower | 1.1146 |
+
+<!-- GENERATED:model_table:END -->
+
+<!-- GENERATED:model_findings:BEGIN -->
+
+- The simple linear regression on a few sales-history features is 4.7% worse than seasonal-naive (0.8144 vs 0.7778) and beats it in 1 of 3 folds. Ridge on the full feature set is 23.9% lower, so the gain comes from the full feature set, not from regression as such.
+- Adding a LogisticRegression "does it sell today" stage (the hurdle model) takes Ridge from 0.5916 to 0.5783, better than Ridge in every fold.
+- Both boosted models beat Ridge and the hurdle model in every fold. Even the weaker one, lightgbm, is 11.2% lower than Ridge and 9.2% lower than the hurdle model.
+- Between the two boosted models the fold winners are lightgbm in fold 1, xgboost in fold 2, xgboost in fold 3: each model wins at least one fold, so 3 folds cannot separate them.
+
+<!-- GENERATED:model_findings:END -->
 
 ## Claim 1 - verified, with a scope note
 
@@ -123,13 +138,27 @@ values are in log units because the Tweedie models forecast log(expected units))
 The plan's target was "the 28-day rolling mean, 28-day lag and sell price drive most
 predictions". **That differs from what was measured:**
 
-| Rank | LightGBM | share | XGBoost | share |
+<!-- GENERATED:shap_top:BEGIN -->
+
+| Rank | lightgbm | share | xgboost | share |
 | --- | --- | --- | --- | --- |
 | 1 | roll_mean_14 | 15.5% | roll_mean_14 | 19.2% |
 | 2 | roll_mean_28 | 12.6% | item_id | 15.4% |
 | 3 | item_id | 12.0% | roll_mean_28 | 11.1% |
 | 4 | roll_std_182 | 8.0% | roll_mean_7 | 8.2% |
 | 5 | day_of_week | 5.0% | roll_std_182 | 5.2% |
+
+Share of total mean |SHAP| by feature group:
+
+| Group | lightgbm | xgboost |
+| --- | --- | --- |
+| rolling means | 41.4% | 45.9% |
+| product identity | 16.7% | 19.7% |
+| price | 4.2% | 3.3% |
+| sales lags | 3.1% | 3.8% |
+| snap | 0.4% | 0.2% |
+
+<!-- GENERATED:shap_top:END -->
 
 - The 28-day rolling mean is a top-3 driver in both models (12.6% and 11.1% of total
   mean |SHAP|), but the 14-day rolling mean ranks first in both.
@@ -171,10 +200,16 @@ non-SNAP days of the same calendar month and weekday (448 month-weekday cells,
 2011-01-29 to 2016-05-22, Christmas Day dropped because the stores close). 95%
 intervals come from a bootstrap over months (2,000 draws, seed 0).
 
-| Scope | FOODS lift | 95% CI | Non-food lift | FOODS vs non-food |
-| --- | --- | --- | --- | --- |
-| Store CA_1 | +11.8% | +10.3% to +13.4% | +3.8% | +7.8% (+5.8% to +9.7%) |
-| All 4 CA stores | +9.8% | +8.4% to +11.2% | +2.2% | +7.5% (+5.8% to +9.1%) |
+<!-- GENERATED:snap_table:BEGIN -->
+
+| Scope | Food lift | 95% CI | Non-food lift | Food beyond non-food | 95% CI |
+| --- | --- | --- | --- | --- | --- |
+| store CA_1 | +11.8% | +10.3% to +13.4% | +3.8% | +7.8% | +5.8% to +9.7% |
+| state CA (all stores) | +9.8% | +8.4% to +11.2% | +2.2% | +7.5% | +5.8% to +9.1% |
+
+SNAP days in California are the 1st to the 10th of each month. Compared within 448 same-month, same-weekday cells from 2011-01-29 to 2016-05-22; the intervals resample whole months (2,000 draws).
+
+<!-- GENERATED:snap_table:END -->
 
 The plan's target was "SNAP days lift food sales about 10%". **Verified, with a
 caveat:** food sells 11.8% more on SNAP days at CA_1 (9.8% across California). Because
@@ -195,15 +230,20 @@ non-food on the same days)"**.
   - All models follow the weekly cycle: weekend peaks of about 6,000-6,800 units and
     weekday troughs of about 3,500-4,000 units.
   - LightGBM and XGBoost lie almost on top of each other. They track weekdays closely
-    but fall short of the tallest weekend peaks: on Sunday 6 March XGBoost forecasts
-    5,713 units against 6,829 sold, on 3 April 5,970 against 6,496, and on 14-15 May
-    about 5,700-5,800 against 6,245 and 6,707. This comes from `store_daily_units`
-    in `results/metrics.json`.
+    but fall short of the tallest weekend peaks; the largest shortfalls, from
+    `store_daily_units` in `results/metrics.json`, follow this list.
   - Seasonal-naive repeats its training week's quirks. Fold 2 copies the week ending on
     Easter Sunday (27 March), when sales dipped, so it forecasts 4,669 units for every
     Sunday in fold 2 against actual Sundays of about 6,000-6,500 (6,496 on 3 April).
   - Ridge is close to the boosted models on most days but sits lower on several
     troughs and peaks, most visibly in fold 3.
+
+<!-- GENERATED:peak_misses:BEGIN -->
+
+- **Peaks are under-forecast.** Summed over the whole store, xgboost forecasts below actual sales on 56 of 84 test days. Its largest shortfalls: Sun 6 Mar 2016: 5,658 forecast vs 6,829 sold; Sat 26 Mar 2016: 5,370 forecast vs 6,139 sold; Sun 15 May 2016: 5,777 forecast vs 6,707 sold.
+
+<!-- GENERATED:peak_misses:END -->
+
 - **SHAP summary plots**: `results/shap_summary_xgboost_CA_1.png` and
   `results/shap_summary_lightgbm_CA_1.png`, drawn by `m5-explain`. Each is a beeswarm
   of the fold 3 test window: 5,000 of the 85,372 rows, drawn at random with seed 0 (the

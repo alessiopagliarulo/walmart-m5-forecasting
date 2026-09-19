@@ -1,9 +1,10 @@
 # Project plan
 
 This is the whole-project plan. Issues #1 (data pipeline and repo foundation), #2
-(baselines), #3 (scikit-learn models), #4 (gradient boosting) and #5 (SHAP
-explanations and the SNAP lift) are built, with the evaluation harness. Everything marked **not built** below is planned work, and every number in the
-"Targets" section is a target, not a result.
+(baselines), #3 (scikit-learn models), #4 (gradient boosting), #5 (SHAP explanations
+and the SNAP lift) and #6 (the results write-up, [docs/RESULTS.md](RESULTS.md)) are
+built, with the evaluation harness. Everything marked **not built** below is planned
+work, and every number in the "Targets" section is a target, not a result.
 
 ## 1. Purpose
 
@@ -65,7 +66,7 @@ Features (built): 52 model inputs across the planned families, meeting the 40+ t
 days since release, 7 price features, calendar and event fields, and the store's state
 SNAP flag. The authoritative list is `feature_columns()` in `src/m5/features.py`.
 
-## 5. Tracking and artifacts (**not built** unless noted)
+## 5. Tracking and artifacts (built)
 
 - MLflow for every training run (built, local store in the gitignored `mlruns/`).
 - `results/metrics.json`: WRMSSE per model per fold, with versions, seed, fold
@@ -80,7 +81,9 @@ SNAP flag. The authoritative list is `feature_columns()` in `src/m5/features.py`
   `results/features_<store>_manifest.json` from `m5-features`, `results/metrics.json`
   and `results/metrics.md` from `m5-backtest`, `results/forecast_vs_actual_<store>.png`
   from `m5-plots`, `results/shap_summary.json`, `results/snap_lift.json`,
-  `results/explanations.md` and the SHAP plots from `m5-explain`.
+  `results/explanations.md` and the SHAP plots from `m5-explain`, and the numbers in
+  README.md's Results section, `docs/RESULTS.md` and `docs/RESUME_CLAIMS.md` from
+  `m5-writeup`, which `tests/test_writeup.py` checks against those artifacts.
 
 ## 6. Explainability (built, issue #5)
 
@@ -95,12 +98,12 @@ document the method; `docs/RESUME_CLAIMS.md` has the measured findings.
 
 - `src/m5/`: `download.py`, `verify.py`, `data.py`, `features.py`, `leakage.py`,
   `pipeline.py`, `config.py`, `evaluation.py`, `models.py`, `backtest.py`, `plots.py`,
-  `explain.py`, `snap.py`.
+  `explain.py`, `snap.py`, `writeup.py`.
 - `tests/`: pytest suite on a synthetic fixture (`tests/fixtures/synthetic_m5/`).
 - `provenance/`, `results/`, `docs/`.
 - End to end today: `uv sync`, `uv run m5-download`, `uv run m5-features`,
-  `uv run m5-backtest`, `uv run m5-plots`, `uv run m5-explain`. CI runs ruff,
-  mypy and pytest on every push and pull request.
+  `uv run m5-backtest`, `uv run m5-plots`, `uv run m5-explain`,
+  `uv run m5-writeup`. CI runs ruff, mypy and pytest on every push and pull request.
 
 ## 8. Roadmap
 
@@ -111,7 +114,7 @@ document the method; `docs/RESUME_CLAIMS.md` has the measured findings.
 | #3 | scikit-learn models | built |
 | #4 | XGBoost / LightGBM with walk-forward CV | built |
 | #5 | SHAP explanations | built |
-| #6 | Results write-up | not built |
+| #6 | Results write-up ([docs/RESULTS.md](RESULTS.md)) | built |
 | #14 | Autonomous improvement loop, once the project is real | not built |
 
 ## 9. Non-goals for now
