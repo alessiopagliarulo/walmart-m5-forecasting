@@ -131,6 +131,160 @@ Suggested wording: **"Benchmarked 6 models in 4 model families under leakage-fre
 walk-forward CV across 3,049 series, ranking forecast drivers with SHAP"**. The
 original wording is also accurate.
 
+## Bullet 3 replacement and bullet 2 upgrade
+
+The resume's third bullet now reads "Ranked rolling demand and item price as top SHAP
+predictors, quantifying a 10% food-sales lift on SNAP days". It is to be replaced,
+because SHAP already appears elsewhere on the resume. (Claim 3 above checks a different
+wording.) Below are four verified candidates and an upgrade for the second bullet.
+
+Rules for every wording: true as worded against the committed artifacts, one store only,
+past-tense verb first, no trailing period, at most 118 characters. Each count is Python
+`len()` of the exact string. Percentages printed by `m5-writeup` in the generated tables
+above are quoted as printed (one decimal, standard rounding; the unrounded value is given
+next to each). A percentage computed here for the first time is rounded down, never up.
+
+### Summary
+
+| # | Wording | Chars |
+| --- | --- | --- |
+| 1 | Benchmarked 6 models across 4 families under leakage-free walk-forward CV on 3,049 series from one Walmart store | 112 |
+| 2 | Built a logistic-plus-Ridge hurdle model for 53%-zero daily demand, cutting WRMSSE 2.2% vs. Ridge and 25.7% vs. naive | 117 |
+| 3 | Wrote CI tests that scramble post-cutoff sales and require all 6 models' forecasts unchanged; sha256-pinned raw data | 116 |
+| 4 | Measured an 11.8% SNAP-day food lift at one store, 7.8% above non-food (bootstrap 95% CI 5.8-9.7%), 448 matched cells | 117 |
+| Bullet 2 | Cut WRMSSE 32.7% vs. a seasonal-naive baseline using 52 features incl. lags, rolling means, price and SNAP/holidays | 115 |
+
+**Pick for machine-learning and data-science roles: candidate 3.** Bullets 1 and 2
+already cover the models and the gain over the baseline, and the SNAP lift was already
+in the old bullet 3; candidate 3 adds what the resume does not show at all, leakage
+testing and reproducible data, the most common failure in time-series ML.
+
+### Candidate 1 - model bake-off and validation rigor - verified
+
+> "Benchmarked 6 models across 4 families under leakage-free walk-forward CV on 3,049
+> series from one Walmart store" (112 characters)
+
+- 6 models: the 6 keys of `models` in `results/metrics.json` (seasonal_naive,
+  linear_regression, ridge, hurdle_logistic_ridge, lightgbm, xgboost), the same 6 as
+  `MODELS` in `src/m5/models.py`, all scored on the same 3 folds.
+- 4 families: `FAMILIES` in `src/m5/writeup.py`, shown in the Family column of the
+  table above: naive baseline, linear (OLS and Ridge), logistic hurdle, gradient
+  boosting (LightGBM and XGBoost).
+- Leakage-free walk-forward CV: the 3 folds in `folds` of `results/metrics.json` each
+  train on every day up to the cutoff and score the next 28. "Leakage-free" rests on
+  the tests listed under Claim 3 and candidate 3, which run in CI on synthetic data.
+- 3,049 series from one store: `data.n_series: 3049` in `results/metrics.json`,
+  `store_id: "CA_1"`.
+- Overlap: close to the older Claim 3 wording, and bullet 1 already names LightGBM and
+  XGBoost, so this adds the least new ground.
+
+### Candidate 2 - intermittent demand, the hurdle model - verified, with a caveat
+
+> "Built a logistic-plus-Ridge hurdle model for 53%-zero daily demand, cutting WRMSSE
+> 2.2% vs. Ridge and 25.7% vs. naive" (117 characters)
+
+- The model: `hurdle_logistic_ridge` in `results/metrics.json`, "LogisticRegression
+  (C=1.0) for P(sales > 0) times Ridge (alpha=1.0) fitted on selling days"
+  (`HurdleLogisticRidge` in `src/m5/models.py`).
+- 53% zero: the share of scored item-days (3 test windows, 85,372 each) with zero
+  sales is 52.9%, from `classifier.share_sold` of the hurdle model's folds in
+  `results/metrics.json` (0.4552, 0.4666, 0.4911; 1 minus their mean is 0.5290).
+  Confirmed from the sha256-verified raw file (read-only, run from the repo root):
+
+  ```python
+  import numpy as np
+  import pandas as pd
+
+  s = pd.read_csv("data/raw/sales_train_evaluation.csv")
+  d = s[s.store_id == "CA_1"][[f"d_{i}" for i in range(1, 1942)]].to_numpy()
+  first = np.argmax(d > 0, axis=1)
+  after = np.arange(d.shape[1])[None, :] >= first[:, None]
+  print((d == 0).mean(), (d[after] == 0).mean(), (d[:, 1857:] == 0).mean())
+  # 0.6376 0.5514 0.5290
+  ```
+
+  So 63.8% of all 5,918,109 CA_1 item-days are zero, 55.1% counting each item only
+  from its first sale (before that it was not on sale yet), and 52.9% in the scored
+  test windows. The wording uses 53%, the smallest of the three and the one that
+  traces to a committed artifact. Reading it as "53% of item-days sell nothing" is
+  accurate; rounding 52.9% to 53% overstates by a tenth of a point, well inside the
+  spread between the three measures.
+- 2.2% vs. Ridge: mean WRMSSE 0.5783 against 0.5916 (table above), 2.26% lower,
+  rounded down. Better than Ridge in every fold: 2.5%, 1.5% and 2.5% lower (rounded down)
+  (`folds[].wrmsse` of both models).
+- 25.7% vs. naive: printed in the table above (0.5783 vs. 0.7778; unrounded 25.65%).
+  "naive" means the seasonal-naive baseline.
+- What it does not buy: mean MAE is 1.0% worse than Ridge (1.1429 vs. 1.1315 units),
+  so the gain is on the scaled, sales-weighted WRMSSE only; and both boosted models
+  beat it in every fold (LightGBM is 9.2% lower). The wording claims neither.
+- The classifier is useful on its own: AUC 0.7844, 0.7850 and 0.7588 and Brier skill
+  0.2454, 0.2460 and 0.2045 over the base rate, in `results/metrics.md`.
+
+### Candidate 3 - leakage and reproducibility engineering - verified
+
+> "Wrote CI tests that scramble post-cutoff sales and require all 6 models' forecasts
+> unchanged; sha256-pinned raw data" (116 characters)
+
+- The test: `test_forecasts_ignore_sales_after_the_cutoff` in `tests/test_backtest.py`,
+  parametrized over every entry of `MODELS` (6), replaces every sale after the fold's
+  cutoff with random integers and asserts each model's forecast is exactly equal
+  (`np.testing.assert_array_equal`); it first asserts the scramble really changed the
+  later targets, so it cannot pass vacuously. The boosted models' grid search runs
+  inside that fit.
+- Related gates: `tests/test_leakage.py` (via `src/m5/leakage.py`) scrambles every sale
+  after a cutoff and requires features up to the cutoff plus the horizon to be
+  unchanged, then scrambles every input after the cutoff and requires features up to
+  the cutoff to be unchanged; a deliberately leaky builder must be caught; `test_boosted_search_stays_inside_the_training_window`
+  checks the search validates only on the last 28 training days.
+- CI: `.github/workflows/ci.yml` runs `uv run pytest` on every push and pull request.
+  The tests run on the synthetic fixture (`tests/fixtures/make_synthetic_m5.py`), not
+  the real data; "CI tests" does not claim otherwise.
+- sha256-pinned raw data: `provenance/m5_data.json` pins the sha256 of all 4 raw files
+  (`test_committed_provenance_pins_all_four_files` in `tests/test_download.py`).
+  `m5-download` refuses a mismatching file (`src/m5/download.py`), `m5-features`
+  refuses one (`src/m5/pipeline.py`), and `m5-backtest` stops on features built from
+  unverified data (`test_backtest_stops_on_unverified_features`). The hashes are
+  recorded again in `data.raw_sha256` of `results/metrics.json`.
+- Beyond the line: `m5-explain` refuses to run unless the rebuilt boosted models
+  reproduce the recorded WRMSSE exactly (`wrmsse_rebuilt` equals `wrmsse_recorded` in
+  `results/shap_summary.json`).
+
+### Candidate 4 - SNAP lift as a statistical measurement - verified
+
+> "Measured an 11.8% SNAP-day food lift at one store, 7.8% above non-food (bootstrap
+> 95% CI 5.8-9.7%), 448 matched cells" (117 characters)
+
+- From `scopes."store CA_1"` in `results/snap_lift.json` (the SNAP table above):
+  food `lift` 0.1185 (11.8%, CI 10.3% to 13.4%); `foods_vs_non_food.lift` 0.0776
+  (7.8%, printed as +7.8%), `lift_ci95` 0.0575 to 0.0969 (printed as +5.8% to +9.7%);
+  `n_cells` 448 same-month, same-weekday cells; bootstrap of 2,000 draws over whole
+  months, seed 0.
+- "7.8% above non-food" is the lift of food beyond the non-food lift in the same
+  cells (non-food itself rises 3.8% on SNAP days, a start-of-month effect); the
+  interval in brackets belongs to that 7.8%.
+- No model is involved: `m5-explain` computes it from the raw sales. The older
+  suggestion above rounds these to 12% and 8%; this wording keeps the printed
+  decimals so nothing is rounded up.
+- Scope: store CA_1. Across all of California the figures are 9.8% and 7.5%. The
+  resume's current "10%" was the plan's target; do not mix the two scopes.
+
+### Bullet 2 upgrade - verified
+
+> Current: "Cut WRMSSE error 27% vs. a seasonal-naive baseline using 40+ lag,
+> rolling-mean and SNAP/holiday features"
+
+> Upgrade: "Cut WRMSSE 32.7% vs. a seasonal-naive baseline using 52 features incl. lags,
+> rolling means, price and SNAP/holidays" (115 characters)
+
+- 32.7%: XGBoost against seasonal-naive in the table above (0.5235 vs. 0.7778,
+  unrounded 32.69%).
+- 52 features: `n_features: 52` in `results/features_CA_1_manifest.json`. "incl." is
+  needed: 5 of the 52 are product identity, year and days since release, which the
+  list does not name. Lags (12), rolling means (6), price (7) and SNAP plus holiday
+  events (1 + 5) are all among them, per the breakdown under Claim 2.
+- It replaces the longer suggestion under Claim 2, which rounds to 33% and runs past
+  118 characters.
+
 ## What SHAP says drives the forecasts
 
 From `results/shap_summary.json` (mean |SHAP| over all 3 folds, every test row; SHAP
